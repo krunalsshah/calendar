@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/linear_layout"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -18,15 +17,21 @@
         <CheckedTextView
             android:id="@+id/toolbar_toggle"
             android:text="@string/app_name"
-            tools:text="March"
+            tools:text="March 2016"
             android:textAppearance="@style/TextAppearance.AppCompat.Title"
             android:checkMark="@drawable/ic_expand_toggle_white_24dp"
+            android:freezesText="true"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
 
     </android.support.v7.widget.Toolbar>
 
-    <!-- CalendarView to be inflated dynamically here -->
+    <io.github.hidroh.calendar.widget.EventCalendarView
+        android:id="@+id/calendar_view"
+        android:visibility="gone"
+        tools:visibility="visible"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/recycler_view"

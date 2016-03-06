@@ -74,11 +74,11 @@ public class MainActivityTest {
 
     private void assertToggleOn() {
         assertThat(toggle).isChecked();
-        assertThat(activity.findViewById(R.id.calendar_view)).isNotNull().isVisible();
+        assertThat(activity.findViewById(R.id.calendar_view)).isVisible();
     }
 
     private void assertToggleOff() {
         assertThat(toggle).isNotChecked();
-        assertThat(activity.findViewById(R.id.calendar_view)).isNull();
+        assertThat(activity.findViewById(R.id.calendar_view)).isNotVisible();
     }
 }

@@ -1,23 +1,24 @@
 package io.github.hidroh.calendar;
 
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.format.DateUtils;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.CheckedTextView;
-import android.widget.LinearLayout;
+
+import java.util.Calendar;
 
 import io.github.hidroh.calendar.widget.EventCalendarView;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final String STATE_TOOLBAR_TOGGLE = "state:toolbarToggle";
-    private ViewGroup mViewGroup;
     private CheckedTextView mToolbarToggle;
-    private View mCalendarView;
+    private EventCalendarView mCalendarView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,7 +36,6 @@ public class MainActivity extends AppCompatActivity {
         super.onRestoreInstanceState(savedInstanceState);
         if (savedInstanceState.getBoolean(STATE_TOOLBAR_TOGGLE, false)) {
             mToolbarToggle.performClick();
-            // TODO restore calendar view state
         }
     }
 
@@ -52,12 +52,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putBoolean(STATE_TOOLBAR_TOGGLE, mToolbarToggle.isChecked());
-        // TODO save calendar view state
     }
 
     private void setupContentView() {
         mToolbarToggle = (CheckedTextView) findViewById(R.id.toolbar_toggle);
-        mViewGroup = (ViewGroup) findViewById(R.id.linear_layout);
         mToolbarToggle.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -65,18 +63,28 @@ public class MainActivity extends AppCompatActivity {
                 toggleCalendarView();
             }
         });
-        mCalendarView = new EventCalendarView(this);
-        mCalendarView.setId(R.id.calendar_view);
-        mCalendarView.setLayoutParams(new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        // TODO update toolbar title with active month in calendar view
+        mCalendarView = (EventCalendarView) findViewById(R.id.calendar_view);
+        mCalendarView.setOnChangeListener(new EventCalendarView.OnChangeListener() {
+            @Override
+            public void onSelectedMonthChange(@NonNull Calendar calendar) {
+                updateTitle(calendar);
+            }
+        });
+    }
+
+    private void updateTitle(Calendar calendar) {
+        final int flags = DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_NO_MONTH_DAY
+                | DateUtils.FORMAT_SHOW_YEAR;
+        final long millis = calendar.getTimeInMillis();
+        mToolbarToggle.setText(DateUtils.formatDateRange(MainActivity.this,
+                millis, millis, flags));
     }
 
     private void toggleCalendarView() {
         if (mToolbarToggle.isChecked()) {
-            mViewGroup.addView(mCalendarView, 1); // below toolbar
+            mCalendarView.setVisibility(View.VISIBLE);
         } else {
-            mViewGroup.removeViewAt(1);
+            mCalendarView.setVisibility(View.GONE);
         }
     }
 }

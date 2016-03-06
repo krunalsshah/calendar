@@ -24,8 +24,12 @@ Simple event calendar, with agenda view.
 Choice of widget:
 
 * `android.widget.CalendarView`:
-  * zero efforts
+  * included in SDK
   * no event indicator
   * no month change listener
   * no state restoration
   * inconsistent look and feel across API levels
+* custom `EventCalendarView`:
+  * use a `RecyclerView` with `GridLayoutManager` (or `GridView`) to display a grid of days in month
+  * use a `ViewPager` to allow swiping between months, make it 'circular' to minimize pages required
+  * override `ViewPager.onMeasure()` to allow its height to wrap content
