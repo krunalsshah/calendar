@@ -80,7 +80,7 @@ class MonthView extends RecyclerView {
                 if (mListener == null) {
                     return;
                 }
-                if (payload != null && payload instanceof SelectionPayload) {
+                if (payload instanceof SelectionPayload) {
                     mSelectedDay.set(mCalendar.get(Calendar.YEAR), mCalendar.get(Calendar.MONTH),
                             ((SelectionPayload) payload).dayOfMonth);
                     mListener.onSelectedDayChange(mSelectedDay);
@@ -150,7 +150,7 @@ class MonthView extends RecyclerView {
             if (holder instanceof HeaderViewHolder) {
                 ((HeaderViewHolder) holder).textView.setText(
                         mWeekdays[position + Calendar.SUNDAY]);
-            } else if (holder instanceof ContentViewHolder) {
+            } else { // holder instanceof ContentViewHolder
                 if (position < mStartOffset) {
                     ((ContentViewHolder) holder).textView.setText(null);
                 } else {
