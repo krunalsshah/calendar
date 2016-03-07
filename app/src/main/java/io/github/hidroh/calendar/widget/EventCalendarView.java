@@ -93,12 +93,7 @@ public class EventCalendarView extends ViewPager {
                 }
             }
         });
-        addOnPageChangeListener(new OnPageChangeListener() {
-            @Override
-            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-                // no op
-            }
-
+        addOnPageChangeListener(new SimpleOnPageChangeListener() {
             @Override
             public void onPageSelected(int position) {
                 if (mListener != null) {
@@ -161,7 +156,7 @@ public class EventCalendarView extends ViewPager {
             view.setLayoutParams(new ViewPager.LayoutParams());
             view.setOnDateChangeListener(this);
             mViews.set(position, view);
-            container.addView(view);
+            container.addView(view); // views are not added in same order as adapter items
             bind(position);
             return view;
         }
