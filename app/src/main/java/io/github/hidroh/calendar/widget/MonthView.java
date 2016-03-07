@@ -16,6 +16,7 @@ import android.widget.TextView;
 import java.text.DateFormatSymbols;
 import java.util.Calendar;
 
+import io.github.hidroh.calendar.CalendarDate;
 import io.github.hidroh.calendar.R;
 import io.github.hidroh.calendar.text.style.CircleSpan;
 
@@ -24,8 +25,8 @@ import io.github.hidroh.calendar.text.style.CircleSpan;
  */
 class MonthView extends RecyclerView {
     private static final int SPANS_COUNT = 7; // days in week
-    private final Calendar mSelectedDay = Calendar.getInstance();
-    private Calendar mCalendar;
+    private final CalendarDate mSelectedDay = CalendarDate.today();
+    private CalendarDate mCalendarDate;
     private EventAdapter mAdapter;
     private OnDateChangeListener mListener;
 
@@ -34,10 +35,10 @@ class MonthView extends RecyclerView {
      */
     interface OnDateChangeListener {
         /**
-         * Fired when a new selection has been made
-         * @param calendar  calendar object representing selected day
+         * Fired when a new selection has been made via UI interaction
+         * @param calendarDate  calendar object representing selected day
          */
-        void onSelectedDayChange(@NonNull Calendar calendar);
+        void onSelectedDayChange(@NonNull CalendarDate calendarDate);
     }
 
     public MonthView(Context context) {
@@ -64,16 +65,16 @@ class MonthView extends RecyclerView {
     private void init() {
         setLayoutManager(new GridLayoutManager(getContext(), SPANS_COUNT));
         setHasFixedSize(true);
-        setCalendar(Calendar.getInstance());
+        setCalendar(CalendarDate.today());
     }
 
     /**
      * Sets month to display
-     * @param calendar  calendar object representing month to display
+     * @param calendarDate  calendar object representing month to display
      */
-    void setCalendar(@NonNull Calendar calendar) {
-        mCalendar = calendar;
-        mAdapter = new EventAdapter(calendar);
+    void setCalendar(@NonNull CalendarDate calendarDate) {
+        mCalendarDate = calendarDate;
+        mAdapter = new EventAdapter(calendarDate);
         mAdapter.registerAdapterDataObserver(new AdapterDataObserver() {
             @Override
             public void onItemRangeChanged(int positionStart, int itemCount, Object payload) {
@@ -81,7 +82,8 @@ class MonthView extends RecyclerView {
                     return;
                 }
                 if (payload instanceof SelectionPayload) {
-                    mSelectedDay.set(mCalendar.get(Calendar.YEAR), mCalendar.get(Calendar.MONTH),
+                    mSelectedDay.set(mCalendarDate.get(Calendar.YEAR),
+                            mCalendarDate.get(Calendar.MONTH),
                             ((SelectionPayload) payload).dayOfMonth);
                     mListener.onSelectedDayChange(mSelectedDay);
                 }
@@ -94,14 +96,14 @@ class MonthView extends RecyclerView {
      * Sets selected day if it falls within this month, unset any previously selected day otherwise
      * @param selectedDay    selected day or null
      */
-    void setSelectedDay(@Nullable Calendar selectedDay) {
-        if (mCalendar == null) {
+    void setSelectedDay(@Nullable CalendarDate selectedDay) {
+        if (mCalendarDate == null) {
             return;
         }
         if (selectedDay == null) {
             mAdapter.setSelectedDay(null);
-        } else if (mCalendar.get(Calendar.YEAR) == selectedDay.get(Calendar.YEAR) &&
-                mCalendar.get(Calendar.MONTH) == selectedDay.get(Calendar.MONTH)) {
+        } else if (mCalendarDate.get(Calendar.YEAR) == selectedDay.get(Calendar.YEAR) &&
+                mCalendarDate.get(Calendar.MONTH) == selectedDay.get(Calendar.MONTH)) {
             mAdapter.setSelectedDay(selectedDay);
         } else {
             mAdapter.setSelectedDay(null);
@@ -112,8 +114,9 @@ class MonthView extends RecyclerView {
      * Gets calendar object currently being displayed
      * @return  displayed calendar
      */
-    Calendar getCalendar() {
-        return mCalendar;
+    @Deprecated
+    CalendarDate getCalendar() {
+        return mCalendarDate;
     }
 
     static class EventAdapter extends Adapter<CellViewHolder> {
@@ -124,7 +127,7 @@ class MonthView extends RecyclerView {
         private final int mDays;
         private int mSelectedPosition = -1;
 
-        public EventAdapter(Calendar cal) {
+        public EventAdapter(CalendarDate cal) {
             mWeekdays = DateFormatSymbols.getInstance().getShortWeekdays();
             cal.set(Calendar.DAY_OF_MONTH, 1);
             mStartOffset = cal.get(Calendar.DAY_OF_WEEK) - cal.getFirstDayOfWeek() + SPANS_COUNT;
@@ -186,7 +189,7 @@ class MonthView extends RecyclerView {
             return mDays;
         }
 
-        void setSelectedDay(@Nullable Calendar selectedDay) {
+        void setSelectedDay(@Nullable CalendarDate selectedDay) {
             setSelectedPosition(selectedDay == null ? -1 :
                     mStartOffset + selectedDay.get(Calendar.DAY_OF_MONTH) - 1, false);
         }

@@ -19,6 +19,7 @@ import org.robolectric.util.ActivityController;
 
 import java.util.Calendar;
 
+import io.github.hidroh.calendar.CalendarDate;
 import io.github.hidroh.calendar.R;
 import io.github.hidroh.calendar.test.shadows.ShadowViewPager;
 
@@ -26,7 +27,6 @@ import static io.github.hidroh.calendar.test.assertions.CalendarAssert.assertTha
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 
 @Config(shadows = ShadowViewPager.class)
@@ -119,14 +119,11 @@ public class EventCalendarViewTest {
     @Test
     public void testChangeListener() {
         EventCalendarView.OnChangeListener listener = mock(EventCalendarView.OnChangeListener.class);
-        // initial binding, should generate notification
         calendarView.setOnChangeListener(listener);
-        verify(listener).onSelectedMonthChange(any(Calendar.class));
-        reset(listener);
 
         // swiping to change page, should generate notification
         shadowCalendarView.swipeLeft();
-        verify(listener).onSelectedMonthChange(any(Calendar.class));
+        verify(listener).onSelectedDayChange(any(CalendarDate.class));
     }
 
     @After

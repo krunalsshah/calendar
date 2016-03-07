@@ -30,11 +30,14 @@
         android:id="@+id/calendar_view"
         android:visibility="gone"
         tools:visibility="visible"
+        android:elevation="@dimen/default_elevation"
+        android:background="?android:attr/colorBackground"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        tools:ignore="UnusedAttribute" />
 
-    <android.support.v7.widget.RecyclerView
-        android:id="@+id/recycler_view"
+    <io.github.hidroh.calendar.widget.AgendaView
+        android:id="@+id/agenda_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 

@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:animateLayoutChanges="true"
     tools:context=".MainActivity">
 
     <android.support.v7.widget.Toolbar
@@ -17,39 +18,27 @@
             android:text="@string/app_name"
             tools:text="March 2016"
             android:textAppearance="@style/TextAppearance.AppCompat.Title"
-            android:textColor="?android:attr/textColorPrimaryInverseNoDisable"
+            android:checkMark="@drawable/ic_expand_toggle_white_24dp"
             android:freezesText="true"
-            android:enabled="false"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
 
     </android.support.v7.widget.Toolbar>
 
-    <FrameLayout
-        android:id="@+id/calendar_view_container"
+    <io.github.hidroh.calendar.widget.EventCalendarView
+        android:id="@+id/calendar_view"
         android:layout_below="@id/toolbar"
-        android:background="?android:attr/colorBackground"
+        android:visibility="gone"
+        tools:visibility="visible"
         android:elevation="@dimen/default_elevation"
-        android:layout_width="@dimen/calendar_width"
-        android:layout_height="match_parent"
-        tools:ignore="UnusedAttribute">
-
-        <io.github.hidroh.calendar.widget.EventCalendarView
-            android:id="@+id/calendar_view"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-
-    </FrameLayout>
+        android:background="?android:attr/colorBackground"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        tools:ignore="UnusedAttribute" />
 
     <io.github.hidroh.calendar.widget.AgendaView
         android:id="@+id/agenda_view"
         android:layout_below="@id/toolbar"
-        android:layout_toRightOf="@id/calendar_view_container"
-        android:layout_toEndOf="@id/calendar_view_container"
-        android:layout_marginRight="@dimen/margin"
-        android:layout_marginEnd="@dimen/margin"
-        android:layout_marginLeft="@dimen/margin"
-        android:layout_marginStart="@dimen/margin"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 

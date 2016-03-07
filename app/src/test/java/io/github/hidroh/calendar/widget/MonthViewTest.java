@@ -21,6 +21,7 @@ import org.robolectric.util.ActivityController;
 import java.text.DateFormatSymbols;
 import java.util.Calendar;
 
+import io.github.hidroh.calendar.CalendarDate;
 import io.github.hidroh.calendar.R;
 import io.github.hidroh.calendar.test.shadows.ShadowViewHolder;
 
@@ -46,7 +47,7 @@ public class MonthViewTest {
         TestActivity activity = controller.create().start().resume().visible().get();
         monthView = (MonthView) activity.findViewById(R.id.calendar_view);
         adapter = monthView.getAdapter();
-        Calendar calendar = Calendar.getInstance();
+        CalendarDate calendar = CalendarDate.today();
         calendar.set(2016, Calendar.MARCH, 1);
         monthView.setCalendar(calendar);
         // 7 header cells + 2 carried days from Feb + 31 days in March
@@ -82,28 +83,28 @@ public class MonthViewTest {
 
         // clear selection
         monthView.setSelectedDay(null);
-        verify(listener, never()).onSelectedDayChange(any(Calendar.class));
+        verify(listener, never()).onSelectedDayChange(any(CalendarDate.class));
 
         // new selection outside current month, not triggered by users
-        Calendar selection = Calendar.getInstance();
+        CalendarDate selection = CalendarDate.today();
         selection.set(2016, Calendar.APRIL, 1);
         monthView.setSelectedDay(selection);
-        verify(listener, never()).onSelectedDayChange(any(Calendar.class));
+        verify(listener, never()).onSelectedDayChange(any(CalendarDate.class));
 
         // new selection inside current month, not triggered by users
         selection.set(2016, Calendar.MARCH, 1);
         monthView.setSelectedDay(selection);
-        verify(listener, never()).onSelectedDayChange(any(Calendar.class));
+        verify(listener, never()).onSelectedDayChange(any(CalendarDate.class));
 
         // change selection via UI interaction, triggered by users
         RecyclerView.ViewHolder viewHolder = createBindViewHolder(10); // 02-March-2016
         viewHolder.itemView.performClick();
-        verify(listener).onSelectedDayChange(any(Calendar.class));
+        verify(listener).onSelectedDayChange(any(CalendarDate.class));
 
         // change selection via UI interaction, triggered by users
         viewHolder = createBindViewHolder(11); // 03-March-2016
         viewHolder.itemView.performClick();
-        verify(listener, times(2)).onSelectedDayChange(any(Calendar.class));
+        verify(listener, times(2)).onSelectedDayChange(any(CalendarDate.class));
     }
 
     @After
