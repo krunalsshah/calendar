@@ -69,6 +69,11 @@ public class MainActivity extends AppCompatActivity {
             public void onSelectedMonthChange(@NonNull Calendar calendar) {
                 updateTitle(calendar);
             }
+
+            @Override
+            public void onSelectedDayChange(@NonNull Calendar calendar) {
+                // TODO
+            }
         });
     }
 
