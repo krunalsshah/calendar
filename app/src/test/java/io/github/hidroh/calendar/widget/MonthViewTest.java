@@ -115,7 +115,7 @@ public class MonthViewTest {
     private RecyclerView.ViewHolder createBindViewHolder(int position) {
         RecyclerView.ViewHolder viewHolder = adapter.createViewHolder(monthView,
                 adapter.getItemViewType(position));
-        ((ShadowViewHolder) ShadowExtractor.extract(viewHolder)).setAdapterPosition(position);
+        ((ShadowViewHolder) ShadowExtractor.extract(viewHolder)).adapterPosition = position;
         adapter.bindViewHolder(viewHolder, position);
         return viewHolder;
     }

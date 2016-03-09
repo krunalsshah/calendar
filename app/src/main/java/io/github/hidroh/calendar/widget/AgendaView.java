@@ -36,7 +36,8 @@ public class AgendaView extends RecyclerView {
     private OnDateChangeListener mListener;
     private AgendaAdapter mAdapter;
     private final CalendarDate mSelectedDate = CalendarDate.today();
-    private int mPendingScrollPosition = -1; // represent top scroll position to be set programmatically
+    // represent top scroll position to be set programmatically
+    private int mPendingScrollPosition = NO_POSITION;
     private long mPrevTimeMillis = -1;
 
     /**
@@ -80,24 +81,7 @@ public class AgendaView extends RecyclerView {
 
     @Override
     public void onScrolled(int dx, int dy) {
-        int position = ((LinearLayoutManager) getLayoutManager())
-                .findFirstVisibleItemPosition();
-        if (position < 0) {
-            return;
-        }
-        if (mPendingScrollPosition == position) {
-            mPendingScrollPosition = -1; // clear pending
-        }
-        long timeMillis = mAdapter.getItem(position).timeMillis;
-        if (mPrevTimeMillis == timeMillis) {
-            return;
-        }
-        mPrevTimeMillis = timeMillis;
-        mSelectedDate.setTimeInMillis(timeMillis);
-        // only notify listener if scroll is not triggered programmatically (i.e. no pending)
-        if (mPendingScrollPosition < 0 && mListener != null) {
-            mListener.onSelectedDayChange(mSelectedDate);
-        }
+        notifyDateChange();
     }
 
     /**
@@ -128,6 +112,26 @@ public class AgendaView extends RecyclerView {
         mAdapter = new AgendaAdapter(getContext());
         setAdapter(mAdapter);
         getLayoutManager().scrollToPosition(AgendaAdapter.MONTH_SIZE * 2); // start of current month
+    }
+
+    private void notifyDateChange() {
+        int position = ((LinearLayoutManager) getLayoutManager())
+                .findFirstVisibleItemPosition();
+        if (position < 0) {
+            return;
+        }
+        long timeMillis = mAdapter.getItem(position).timeMillis;
+        if (mPrevTimeMillis != timeMillis) {
+            mPrevTimeMillis = timeMillis;
+            mSelectedDate.setTimeInMillis(timeMillis);
+            // only notify listener if scroll is not triggered programmatically (i.e. no pending)
+            if (mPendingScrollPosition == NO_POSITION && mListener != null) {
+                mListener.onSelectedDayChange(mSelectedDate);
+            }
+        }
+        if (mPendingScrollPosition == position) {
+            mPendingScrollPosition = NO_POSITION; // clear pending
+        }
     }
 
     /**
@@ -234,7 +238,7 @@ public class AgendaView extends RecyclerView {
                     return i;
                 }
             }
-            return -1;
+            return NO_POSITION;
         }
 
         private AgendaItem getItem(int position) {

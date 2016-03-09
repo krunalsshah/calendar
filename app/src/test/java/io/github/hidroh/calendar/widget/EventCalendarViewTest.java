@@ -132,8 +132,8 @@ public class EventCalendarViewTest {
     }
 
     private Calendar getCalendarAt(int position) {
-        return ((MonthView) calendarView.getAdapter().instantiateItem(calendarView, position))
-                .getCalendar();
+        return ((MonthView) calendarView.getAdapter()
+                .instantiateItem(calendarView, position)).mCalendarDate;
     }
 
     static class TestActivity extends AppCompatActivity {

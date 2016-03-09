@@ -3,6 +3,7 @@ package io.github.hidroh.calendar.widget;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.SpannableString;
@@ -26,7 +27,7 @@ import io.github.hidroh.calendar.text.style.CircleSpan;
 class MonthView extends RecyclerView {
     private static final int SPANS_COUNT = 7; // days in week
     private final CalendarDate mSelectedDay = CalendarDate.today();
-    private CalendarDate mCalendarDate;
+    @VisibleForTesting CalendarDate mCalendarDate;
     private EventAdapter mAdapter;
     private OnDateChangeListener mListener;
 
@@ -108,15 +109,6 @@ class MonthView extends RecyclerView {
         } else {
             mAdapter.setSelectedDay(null);
         }
-    }
-
-    /**
-     * Gets calendar object currently being displayed
-     * @return  displayed calendar
-     */
-    @Deprecated
-    CalendarDate getCalendar() {
-        return mCalendarDate;
     }
 
     static class EventAdapter extends Adapter<CellViewHolder> {

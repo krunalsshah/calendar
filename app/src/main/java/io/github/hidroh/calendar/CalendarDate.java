@@ -26,4 +26,30 @@ public class CalendarDate extends GregorianCalendar {
     private CalendarDate() {
         super();
     }
+
+    /**
+     * Checks if this instance falls in some month before given instance
+     * @param other    instance to check against
+     * @return  true if this instance is at least 1 'month' before, false otherwise
+     */
+    public boolean monthBefore(CalendarDate other) {
+        int day = other.get(DAY_OF_MONTH);
+        other.set(DAY_OF_MONTH, 1);
+        boolean before = getTimeInMillis() < other.getTimeInMillis();
+        other.set(DAY_OF_MONTH, day);
+        return before;
+    }
+
+    /**
+     * Checks if this instance falls in some month after given instance
+     * @param other    instance to check against
+     * @return  true if this instance is at least 1 'month' after, false otherwise
+     */
+    public boolean monthAfter(CalendarDate other) {
+        int day = other.get(DAY_OF_MONTH);
+        other.set(DAY_OF_MONTH, other.getActualMaximum(DAY_OF_MONTH));
+        boolean after = getTimeInMillis() > other.getTimeInMillis();
+        other.set(DAY_OF_MONTH, day);
+        return after;
+    }
 }
