@@ -29,15 +29,13 @@ public class EventCalendarView extends ViewPager {
             new MonthView.OnDateChangeListener() {
                 @Override
                 public void onSelectedDayChange(@NonNull CalendarDate calendarDate) {
+                    // this should come from a page, only notify its neighbors
                     mAdapter.setSelectedDay(getCurrentItem(), calendarDate, false);
-                    if (mListener != null) {
-                        mListener.onSelectedDayChange(calendarDate);
-                    }
+                    notifyDayChange(calendarDate);
                 }
             };
     private final MonthViewPagerAdapter mAdapter = new MonthViewPagerAdapter(mDateChangeListener);
     private OnChangeListener mListener;
-    private int mPendingCurrentItem = -1; // represent current item to be set programmatically
 
     /**
      * Callback interface for calendar view change events
@@ -82,66 +80,85 @@ public class EventCalendarView extends ViewPager {
     /**
      * Sets selected day, automatically move to next/previous month
      * if given day is not within active month
+     * TODO assume that min left month < selectedDay < max right month
      * @param selectedDay   new selected day
      */
     public void setSelectedDay(@NonNull CalendarDate selectedDay) {
-        // TODO assume here that min left month < selected day < max right month
-        // TODO or the change to selected day would be triggered sequentially
-        // TODO as agenda view is being scrolled (no flinging/skipping dates)
-        int current = mAdapter.mSelectedDay.get(Calendar.DAY_OF_MONTH),
-                first = 1,
-                last = mAdapter.mSelectedDay.getActualMaximum(Calendar.DAY_OF_MONTH);
-        if (current == first && selectedDay.before(mAdapter.mSelectedDay)) {
-            mPendingCurrentItem = getCurrentItem() - 1;
-            setCurrentItem(mPendingCurrentItem, true);
-        } else if (current == last && selectedDay.after(mAdapter.mSelectedDay)) {
-            mPendingCurrentItem = getCurrentItem() + 1;
-            setCurrentItem(mPendingCurrentItem, true);
+        // notify active page and its neighbors
+        int position = getCurrentItem();
+        if (selectedDay.monthBefore(mAdapter.mSelectedDay)) {
+            mAdapter.setSelectedDay(position - 1, selectedDay, true);
+            setCurrentItem(position - 1, true);
+        } else if (selectedDay.monthAfter(mAdapter.mSelectedDay)) {
+            mAdapter.setSelectedDay(position + 1, selectedDay, true);
+            setCurrentItem(position + 1, true);
+        } else {
+            mAdapter.setSelectedDay(position, selectedDay, true);
         }
-        mAdapter.setSelectedDay(getCurrentItem(), selectedDay, true);
     }
 
     private void init() {
         setAdapter(mAdapter);
         addOnPageChangeListener(new SimpleOnPageChangeListener() {
+            public boolean mDragging = false; // indicate if page change is from user
+
             @Override
             public void onPageSelected(int position) {
-                CalendarDate calendar = mAdapter.getCalendar(position);
-                calendar.set(Calendar.DAY_OF_MONTH, 1);
-                mAdapter.setSelectedDay(position, calendar, true);
-                // only notify listener if change is not triggered programmatically (i.e. no pending)
-                if (mPendingCurrentItem == position) {
-                    mPendingCurrentItem = -1; // clear pending
-                } else if (mListener != null) {
-                    mListener.onSelectedDayChange(calendar);
+                if (mDragging) {
+                    // sequence: IDLE -> (DRAGGING) -> SETTLING -> onPageSelected -> IDLE
+                    // ensures that this will always be triggered before syncPages() for position
+                    toFirstDay(position);
+                    notifyDayChange(mAdapter.getCalendar(position));
                 }
+                mDragging = false;
             }
 
             @Override
             public void onPageScrollStateChanged(int state) {
                 if (state == ViewPager.SCROLL_STATE_IDLE) {
-                    // shift and recycle pages if we are currently at last or first,
-                    // ensure that users can peek hidden pages on 2 sides
-                    int position = getCurrentItem(), first = 0, last = mAdapter.getCount() - 1;
-                    if (position == last) {
-                        mAdapter.shiftLeft();
-                        setCurrentItem(first + 1, false);
-                    } else if (position == 0) {
-                        mAdapter.shiftRight();
-                        setCurrentItem(last - 1, false);
-                    } else {
-                        // rebind neighbours due to shifting
-                        if (getCurrentItem() > 0) {
-                            mAdapter.bind(getCurrentItem() - 1);
-                        }
-                        if (getCurrentItem() < mAdapter.getCount() - 1) {
-                            mAdapter.bind(getCurrentItem() + 1);
-                        }
-                    }
+                    syncPages(getCurrentItem());
+                } else if (state == SCROLL_STATE_DRAGGING) {
+                    mDragging = true;
                 }
             }
         });
         setCurrentItem(mAdapter.getCount() / 2);
+    }
+
+    private void toFirstDay(int position) {
+        CalendarDate calendar = mAdapter.getCalendar(position);
+        calendar.set(Calendar.DAY_OF_MONTH, 1);
+        mAdapter.setSelectedDay(position, calendar, true);
+    }
+
+    private void notifyDayChange(@NonNull CalendarDate calendarDate) {
+        if (mListener != null) {
+            mListener.onSelectedDayChange(calendarDate);
+        }
+    }
+
+    /**
+     * shift and recycle pages if we are currently at last or first,
+     * ensure that users can peek hidden pages on 2 sides
+     * @param position  current item position
+     */
+    private void syncPages(int position) {
+        int first = 0, last = mAdapter.getCount() - 1;
+        if (position == last) {
+            mAdapter.shiftLeft();
+            setCurrentItem(first + 1, false);
+        } else if (position == 0) {
+            mAdapter.shiftRight();
+            setCurrentItem(last - 1, false);
+        } else {
+            // rebind neighbours due to shifting
+            if (position > 0) {
+                mAdapter.bind(position - 1);
+            }
+            if (position < mAdapter.getCount() - 1) {
+                mAdapter.bind(position + 1);
+            }
+        }
     }
 
     /**

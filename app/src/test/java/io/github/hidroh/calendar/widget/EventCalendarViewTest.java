@@ -3,6 +3,7 @@ package io.github.hidroh.calendar.widget;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.text.format.DateUtils;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
@@ -29,6 +30,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
+@SuppressWarnings("ConstantConditions")
 @Config(shadows = ShadowViewPager.class)
 @RunWith(RobolectricGradleTestRunner.class)
 public class EventCalendarViewTest {
@@ -57,7 +59,7 @@ public class EventCalendarViewTest {
     }
 
     @Test
-    public void testShiftLeft() {
+    public void testSwipeLeftChangeMonth() {
         // initial state
         Calendar expectedCalendar = Calendar.getInstance();
         int actual = calendarView.getCurrentItem();
@@ -87,7 +89,7 @@ public class EventCalendarViewTest {
     }
 
     @Test
-    public void testShiftRight() {
+    public void testSwipeRightChangeMonth() {
         // initial state
         Calendar expectedCalendar = Calendar.getInstance();
         int actual = calendarView.getCurrentItem();
@@ -114,6 +116,58 @@ public class EventCalendarViewTest {
                 .isInSameMonthAs(expectedCalendar)
                 .isMonthsBefore(getCalendarAt(actual + 1), 1)
                 .isMonthsAfter(getCalendarAt(actual - 1), 1);
+    }
+
+    @Test
+    public void testChangeActiveMonthSelectedDay() {
+        CalendarDate thisMonth = CalendarDate.fromTime(nowCalendar.getTimeInMillis());
+
+        // setting day in same month should not change page
+        thisMonth.set(Calendar.DAY_OF_MONTH, 1);
+        calendarView.setSelectedDay(thisMonth);
+        assertThat(getCalendarAt(calendarView.getCurrentItem()))
+                .isInSameMonthAs(thisMonth);
+
+        // setting day in same month should not change page
+        thisMonth.set(Calendar.DAY_OF_MONTH, thisMonth.getActualMaximum(Calendar.DAY_OF_MONTH));
+        calendarView.setSelectedDay(thisMonth);
+        assertThat(getCalendarAt(calendarView.getCurrentItem()))
+                .isInSameMonthAs(thisMonth);
+
+
+        // setting day in same month should not change page
+        thisMonth.set(Calendar.DAY_OF_MONTH, 15);
+        calendarView.setSelectedDay(thisMonth);
+        assertThat(getCalendarAt(calendarView.getCurrentItem()))
+                .isInSameMonthAs(thisMonth);
+    }
+
+    @Test
+    public void testChangeSelectedDayToPreviousMonth() {
+        CalendarDate firstDay = CalendarDate.fromTime(nowCalendar.getTimeInMillis());
+        firstDay.set(Calendar.DAY_OF_MONTH, 1);
+        calendarView.setSelectedDay(firstDay);
+
+        // setting day in previous month should swipe to left page
+        CalendarDate prevMonth = CalendarDate.fromTime(firstDay.getTimeInMillis() -
+                DateUtils.DAY_IN_MILLIS * 10);
+        calendarView.setSelectedDay(prevMonth);
+        assertThat(getCalendarAt(calendarView.getCurrentItem()))
+                .isInSameMonthAs(prevMonth);
+    }
+
+    @Test
+    public void testChangeSelectedDayToNextMonth() {
+        CalendarDate lastDay = CalendarDate.fromTime(nowCalendar.getTimeInMillis());
+        lastDay.set(Calendar.DAY_OF_MONTH, lastDay.getActualMaximum(Calendar.DAY_OF_MONTH));
+        calendarView.setSelectedDay(lastDay);
+
+        // setting day in next month should swipe to right page
+        CalendarDate nextMonth = CalendarDate.fromTime(lastDay.getTimeInMillis() +
+                DateUtils.DAY_IN_MILLIS * 10);
+        calendarView.setSelectedDay(nextMonth);
+        assertThat(getCalendarAt(calendarView.getCurrentItem()))
+                .isInSameMonthAs(nextMonth);
     }
 
     @Test
