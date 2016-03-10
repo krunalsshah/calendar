@@ -45,4 +45,22 @@ public class CalendarAssert extends AbstractComparableAssert<CalendarAssert, Cal
         isMonthsAfter(calendar, -month);
         return this;
     }
+
+    public CalendarAssert isFirstDayOf(Calendar calendar) {
+        isInSameMonthAs(calendar);
+        int actualDay = actual.get(Calendar.DAY_OF_MONTH);
+        Assertions.assertThat(actualDay)
+                .overridingErrorMessage("Expected day to be equal to <1> but was <%s>", actualDay)
+                .isEqualTo(1);
+        return this;
+    }
+
+    public CalendarAssert isNotFirstDayOf(Calendar calendar) {
+        isInSameMonthAs(calendar);
+        int actualDay = actual.get(Calendar.DAY_OF_MONTH);
+        Assertions.assertThat(actualDay)
+                .overridingErrorMessage("Expected day not be equal to <1> but was <%s>", actualDay)
+                .isNotEqualTo(1);
+        return this;
+    }
 }

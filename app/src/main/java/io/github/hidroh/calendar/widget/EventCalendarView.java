@@ -4,6 +4,7 @@ import android.content.Context;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
+import android.support.annotation.VisibleForTesting;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.util.AttributeSet;
@@ -177,8 +178,8 @@ public class EventCalendarView extends ViewPager {
         private static final String STATE_SELECTED_DAY = "state:selectedDay";
         static final int ITEM_COUNT = 5; // buffer, left, active, right, buffer
 
-        final List<MonthView> mViews = new ArrayList<>(getCount());
-        final CalendarDate mSelectedDay = CalendarDate.today();
+        @VisibleForTesting final List<MonthView> mViews = new ArrayList<>(getCount());
+        @VisibleForTesting final CalendarDate mSelectedDay = CalendarDate.today();
         private final List<CalendarDate> mCalendars = new ArrayList<>(getCount());
         private final MonthView.OnDateChangeListener mListener;
 

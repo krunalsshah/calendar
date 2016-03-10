@@ -3,7 +3,6 @@ package io.github.hidroh.calendar.widget;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
-import android.text.format.DateUtils;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
@@ -37,7 +36,7 @@ public class EventCalendarViewTest {
     private ActivityController<TestActivity> controller;
     private EventCalendarView calendarView;
     private ShadowViewPager shadowCalendarView;
-    private final Calendar nowCalendar = Calendar.getInstance();
+    private final CalendarDate nowCalendar = CalendarDate.today();
 
     @Before
     public void setUp() {
@@ -68,6 +67,7 @@ public class EventCalendarViewTest {
                 .isInSameMonthAs(expectedCalendar);
 
         // swipe left, no shifting
+        // changing month by swiping should automatically set selected day to 1st day
         expectedCalendar.add(Calendar.MONTH, 1);
         shadowCalendarView.swipeLeft();
         actual = calendarView.getCurrentItem();
@@ -75,7 +75,8 @@ public class EventCalendarViewTest {
         assertThat(getCalendarAt(actual))
                 .isInSameMonthAs(expectedCalendar)
                 .isMonthsBefore(getCalendarAt(actual + 1), 1)
-                .isMonthsAfter(getCalendarAt(actual - 1), 1);
+                .isMonthsAfter(getCalendarAt(actual - 1), 1)
+                .isFirstDayOf(expectedCalendar);
 
         // swipe left, reach the end, should shift left to front
         expectedCalendar.add(Calendar.MONTH, 1);
@@ -98,6 +99,7 @@ public class EventCalendarViewTest {
                 .isInSameMonthAs(expectedCalendar);
 
         // swipe right, no shifting
+        // changing month by swiping should automatically set selected day to 1st day
         expectedCalendar.add(Calendar.MONTH, -1);
         shadowCalendarView.swipeRight();
         actual = calendarView.getCurrentItem();
@@ -105,7 +107,8 @@ public class EventCalendarViewTest {
         assertThat(getCalendarAt(actual))
                 .isInSameMonthAs(expectedCalendar)
                 .isMonthsBefore(getCalendarAt(actual + 1), 1)
-                .isMonthsAfter(getCalendarAt(actual - 1), 1);
+                .isMonthsAfter(getCalendarAt(actual - 1), 1)
+                .isFirstDayOf(expectedCalendar);
 
         // swipe right, reach the end, should shift right to end
         expectedCalendar.add(Calendar.MONTH, -1);
@@ -144,40 +147,46 @@ public class EventCalendarViewTest {
 
     @Test
     public void testChangeSelectedDayToPreviousMonth() {
-        CalendarDate firstDay = CalendarDate.fromTime(nowCalendar.getTimeInMillis());
-        firstDay.set(Calendar.DAY_OF_MONTH, 1);
-        calendarView.setSelectedDay(firstDay);
+        CalendarDate prevMonth = CalendarDate.fromTime(nowCalendar.getTimeInMillis());
+        prevMonth.add(Calendar.MONTH, -1);
+        prevMonth.set(Calendar.DAY_OF_MONTH, 15);
 
         // setting day in previous month should swipe to left page
-        CalendarDate prevMonth = CalendarDate.fromTime(firstDay.getTimeInMillis() -
-                DateUtils.DAY_IN_MILLIS * 10);
+        // changing month programmatically should NOT automatically set selected day to 1st day
         calendarView.setSelectedDay(prevMonth);
-        assertThat(getCalendarAt(calendarView.getCurrentItem()))
-                .isInSameMonthAs(prevMonth);
+        assertThat(getSelectedDay())
+                .isInSameMonthAs(prevMonth)
+                .isNotFirstDayOf(prevMonth);
     }
 
     @Test
     public void testChangeSelectedDayToNextMonth() {
-        CalendarDate lastDay = CalendarDate.fromTime(nowCalendar.getTimeInMillis());
-        lastDay.set(Calendar.DAY_OF_MONTH, lastDay.getActualMaximum(Calendar.DAY_OF_MONTH));
-        calendarView.setSelectedDay(lastDay);
+        CalendarDate nextMonth = CalendarDate.fromTime(nowCalendar.getTimeInMillis());
+        nextMonth.add(Calendar.MONTH, 1);
+        nextMonth.set(Calendar.DAY_OF_MONTH, 15);
 
         // setting day in next month should swipe to right page
-        CalendarDate nextMonth = CalendarDate.fromTime(lastDay.getTimeInMillis() +
-                DateUtils.DAY_IN_MILLIS * 10);
+        // changing month programmatically should NOT automatically set selected day to 1st day
         calendarView.setSelectedDay(nextMonth);
-        assertThat(getCalendarAt(calendarView.getCurrentItem()))
-                .isInSameMonthAs(nextMonth);
+        assertThat(getSelectedDay())
+                .isInSameMonthAs(nextMonth)
+                .isNotFirstDayOf(nextMonth);
     }
 
     @Test
-    public void testChangeListener() {
+    public void testNotifyListener() {
         EventCalendarView.OnChangeListener listener = mock(EventCalendarView.OnChangeListener.class);
         calendarView.setOnChangeListener(listener);
 
         // swiping to change page, should generate notification
         shadowCalendarView.swipeLeft();
         verify(listener).onSelectedDayChange(any(CalendarDate.class));
+
+        // changing month programmatically, should not generate notification
+        calendarView.setSelectedDay(nowCalendar);
+        verify(listener).onSelectedDayChange(any(CalendarDate.class));
+
+        // TODO test changing day from month view, should generate notification
     }
 
     @After
@@ -185,9 +194,13 @@ public class EventCalendarViewTest {
         controller.pause().stop().destroy();
     }
 
-    private Calendar getCalendarAt(int position) {
-        return ((MonthView) calendarView.getAdapter()
-                .instantiateItem(calendarView, position)).mCalendarDate;
+    private CalendarDate getCalendarAt(int position) {
+        return ((EventCalendarView.MonthViewPagerAdapter) calendarView.getAdapter())
+                .mViews.get(position).mCalendarDate;
+    }
+
+    private CalendarDate getSelectedDay() {
+        return ((EventCalendarView.MonthViewPagerAdapter) calendarView.getAdapter()).mSelectedDay;
     }
 
     static class TestActivity extends AppCompatActivity {
