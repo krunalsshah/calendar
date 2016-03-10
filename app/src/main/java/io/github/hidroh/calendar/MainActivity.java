@@ -134,6 +134,7 @@ public class MainActivity extends AppCompatActivity {
             }
             mCalendarView.setSelectedDay(mSelectedDate);
             agendaView.setSelectedDay(mSelectedDate);
+            updateTitle(mSelectedDate);
             calendarView.setOnChangeListener(mCalendarListener);
             agendaView.setOnDateChangeListener(mAgendaListener);
         }
