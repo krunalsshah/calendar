@@ -33,7 +33,7 @@ android {
 }
 
 ext {
-    supportVersion = '23.2.0'
+    supportVersion = '23.2.1'
     robolectricVersion = '3.0'
     assertjVersion = '1.1.1'
 }
