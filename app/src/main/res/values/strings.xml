@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">My Calendar</string>
     <string name="no_event">No event</string>
+    <string name="permission_required">Calendar access is required to manage your events</string>
 </resources>

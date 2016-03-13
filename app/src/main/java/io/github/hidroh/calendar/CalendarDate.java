@@ -13,6 +13,10 @@ public class CalendarDate extends GregorianCalendar {
         return calendar;
     }
 
+    public static CalendarDate getInstance() {
+        return today();
+    }
+
     public static CalendarDate fromTime(long timeMillis) {
         if (timeMillis < 0) {
             return null;

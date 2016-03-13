@@ -1,5 +1,7 @@
 package io.github.hidroh.calendar;
 
+import android.content.pm.PackageManager;
+import android.support.annotation.NonNull;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.widget.CheckedTextView;
@@ -31,7 +33,7 @@ import static org.robolectric.Shadows.shadowOf;
 @Config(shadows = {ShadowViewPager.class, ShadowRecyclerView.class, ShadowLinearLayoutManager.class})
 @RunWith(RobolectricGradleTestRunner.class)
 public class MainActivityTest {
-    private ActivityController<MainActivity> controller;
+    private ActivityController<TestMainActivity> controller;
     private MainActivity activity;
     private CheckedTextView toggle;
     private EventCalendarView calendarView;
@@ -39,7 +41,7 @@ public class MainActivityTest {
 
     @Before
     public void setUp() {
-        controller = Robolectric.buildActivity(MainActivity.class);
+        controller = Robolectric.buildActivity(TestMainActivity.class);
         controller.create().start().postCreate(null).resume();
         activity = controller.get();
         toggle = (CheckedTextView) activity.findViewById(R.id.toolbar_toggle);
@@ -105,6 +107,7 @@ public class MainActivityTest {
 
         // toggle on
         toggle = (CheckedTextView) activity.findViewById(R.id.toolbar_toggle);
+        //noinspection ConstantConditions
         toggle.performClick();
         assertToggleOn();
 
@@ -151,5 +154,13 @@ public class MainActivityTest {
     private void assertToggleOff() {
         assertThat(toggle).isNotChecked();
         assertThat(activity.findViewById(R.id.calendar_view)).isNotVisible();
+    }
+
+    static class TestMainActivity extends MainActivity {
+        int permissionCheckResult = PackageManager.PERMISSION_GRANTED;
+        @Override
+        protected int checkPermission(@NonNull String permission) {
+            return permissionCheckResult;
+        }
     }
 }

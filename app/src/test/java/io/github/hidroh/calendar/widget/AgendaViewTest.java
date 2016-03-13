@@ -1,6 +1,7 @@
 package io.github.hidroh.calendar.widget;
 
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -18,6 +19,7 @@ import org.robolectric.Robolectric;
 import org.robolectric.RobolectricGradleTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
+import org.robolectric.internal.ShadowExtractor;
 import org.robolectric.util.ActivityController;
 
 import io.github.hidroh.calendar.CalendarDate;
@@ -41,8 +43,8 @@ public class AgendaViewTest {
     private AgendaView agendaView;
     private RecyclerView.Adapter adapter;
     private final long todayMillis = CalendarDate.today().getTimeInMillis();
-    private final long firstDayMillis = todayMillis - DateUtils.DAY_IN_MILLIS * 31;
-    private final long lastDayMillis = todayMillis + DateUtils.DAY_IN_MILLIS * 31 * 2 - 1;
+    private final long lastDayMillis = todayMillis +
+            DateUtils.DAY_IN_MILLIS * (AgendaAdapter.MONTH_SIZE - 1);
     private LinearLayoutManager layoutManager;
 
     @Before
@@ -56,37 +58,62 @@ public class AgendaViewTest {
 
     @Test
     public void testInitialLayout() {
-        // initial layout should have 3 blocks of 31 days
-        assertThat(adapter.getItemCount()).isEqualTo(31 * 2 * 3);
-        // first visible item should not be first item to allow user to scroll up
-        int topPosition = layoutManager.findFirstVisibleItemPosition();
-        assertThat(topPosition).isGreaterThan(0);
+        // initial layout should have 1 block of 31 days (each with group + placeholder)
+        assertThat(adapter.getItemCount()).isEqualTo(AgendaAdapter.MONTH_SIZE * 2);
         // first visible item should be today by default
-        assertHasDate(createBindViewHolder(topPosition), todayMillis);
-        assertThat((TextView) createBindViewHolder(topPosition + 1).itemView)
+        assertHasDate(createBindViewHolder(0), todayMillis);
+        assertThat((TextView) createBindViewHolder(1).itemView)
                 .hasText(R.string.no_event);
     }
 
     @Test
     public void testPrepend() {
-        assertHasDate(createBindViewHolder(0), firstDayMillis);
-        assertHasDate(createBindViewHolder(0), firstDayMillis - DateUtils.DAY_IN_MILLIS * 31);
+        assertHasDate(createBindViewHolder(0), todayMillis);
+        agendaView.smoothScrollToPosition(0);
+        assertHasDate(createBindViewHolder(0), todayMillis -
+                DateUtils.DAY_IN_MILLIS * AgendaAdapter.MONTH_SIZE);
     }
 
     @Test
     public void testAppend() {
         int lastPosition = adapter.getItemCount() - 1;
-        assertHasDate(createBindViewHolder(lastPosition - 1), lastDayMillis);
         createBindViewHolder(lastPosition);
+        assertHasDate(createBindViewHolder(lastPosition - 1), lastDayMillis);
+        ((ShadowRecyclerView) ShadowExtractor.extract(agendaView))
+                .scrollToLastPosition();
+        lastPosition = adapter.getItemCount() - 1;
         assertHasDate(createBindViewHolder(lastPosition - 1),
-                lastDayMillis + DateUtils.DAY_IN_MILLIS * 31);
+                lastDayMillis + DateUtils.DAY_IN_MILLIS * AgendaAdapter.MONTH_SIZE);
+    }
+
+    @Test
+    public void testPruneUponPrepending() {
+        assertThat(adapter.getItemCount()).isLessThanOrEqualTo(AgendaAdapter.MAX_SIZE * 2);
+        agendaView.smoothScrollToPosition(0);
+        assertThat(adapter.getItemCount()).isLessThanOrEqualTo(AgendaAdapter.MAX_SIZE * 2);
+        agendaView.smoothScrollToPosition(0);
+        assertThat(adapter.getItemCount()).isLessThanOrEqualTo(AgendaAdapter.MAX_SIZE * 2);
+        agendaView.smoothScrollToPosition(0);
+        assertThat(adapter.getItemCount()).isLessThanOrEqualTo(AgendaAdapter.MAX_SIZE * 2);
+    }
+
+    @Test
+    public void testPruneUponAppending() {
+        ShadowRecyclerView shadowAgendaView =
+                (ShadowRecyclerView) ShadowExtractor.extract(agendaView);
+        assertThat(adapter.getItemCount()).isLessThanOrEqualTo(AgendaAdapter.MAX_SIZE * 2);
+        shadowAgendaView.scrollToLastPosition();
+        assertThat(adapter.getItemCount()).isLessThanOrEqualTo(AgendaAdapter.MAX_SIZE * 2);
+        shadowAgendaView.scrollToLastPosition();
+        assertThat(adapter.getItemCount()).isLessThanOrEqualTo(AgendaAdapter.MAX_SIZE * 2);
+        shadowAgendaView.scrollToLastPosition();
+        assertThat(adapter.getItemCount()).isLessThanOrEqualTo(AgendaAdapter.MAX_SIZE * 2);
     }
 
     @Test
     public void testChangeSelectedDay() {
         long tomorrowMillis = todayMillis + DateUtils.DAY_IN_MILLIS;
-        assertHasDate(createBindViewHolder(layoutManager.findFirstVisibleItemPosition()),
-                todayMillis);
+        assertHasDate(createBindViewHolder(0), todayMillis);
         agendaView.setSelectedDay(CalendarDate.fromTime(tomorrowMillis));
         assertHasDate(createBindViewHolder(layoutManager.findFirstVisibleItemPosition()),
                 tomorrowMillis);
@@ -94,25 +121,24 @@ public class AgendaViewTest {
 
     @Test
     public void testPrependSelectedDay() {
-        long beforeFirstDayMillis = firstDayMillis - DateUtils.DAY_IN_MILLIS;
-        assertHasDate(createBindViewHolder(layoutManager.findFirstVisibleItemPosition()),
-                todayMillis);
+        long beforeFirstDayMillis = todayMillis - DateUtils.DAY_IN_MILLIS;
+        assertHasDate(createBindViewHolder(0), todayMillis);
         agendaView.setSelectedDay(CalendarDate.fromTime(beforeFirstDayMillis));
         assertHasDate(createBindViewHolder(layoutManager.findFirstVisibleItemPosition()),
                 beforeFirstDayMillis);
-        assertHasDate(createBindViewHolder(0), firstDayMillis - DateUtils.DAY_IN_MILLIS * 31);
+        assertHasDate(createBindViewHolder(0), todayMillis -
+                DateUtils.DAY_IN_MILLIS * AgendaAdapter.MONTH_SIZE);
     }
 
     @Test
     public void testAppendSelectedDay() {
         long afterLastDayMillis = lastDayMillis + DateUtils.DAY_IN_MILLIS;
-        assertHasDate(createBindViewHolder(layoutManager.findFirstVisibleItemPosition()),
-                todayMillis);
+        assertHasDate(createBindViewHolder(0), todayMillis);
         agendaView.setSelectedDay(CalendarDate.fromTime(afterLastDayMillis));
         assertHasDate(createBindViewHolder(layoutManager.findFirstVisibleItemPosition()),
                 afterLastDayMillis);
         assertHasDate(createBindViewHolder(adapter.getItemCount() - 2),
-                lastDayMillis + DateUtils.DAY_IN_MILLIS * 31);
+                lastDayMillis + DateUtils.DAY_IN_MILLIS * AgendaAdapter.MONTH_SIZE);
     }
 
     @Test
@@ -125,12 +151,24 @@ public class AgendaViewTest {
         verify(listener, never()).onSelectedDayChange(any(CalendarDate.class));
 
         // set day via scrolling should trigger listener
-        agendaView.smoothScrollToPosition(0);
+        agendaView.smoothScrollToPosition(1);
         verify(listener).onSelectedDayChange(any(CalendarDate.class));
 
         // scroll to an item of same last selected date should not trigger listener
         agendaView.smoothScrollToPosition(1);
         verify(listener).onSelectedDayChange(any(CalendarDate.class));
+    }
+
+    @Test
+    public void testStateRestoration() {
+        agendaView.smoothScrollToPosition(0);
+        int expected = AgendaAdapter.MONTH_SIZE * 2 * 2; // prepended
+        assertThat(adapter.getItemCount()).isEqualTo(expected);
+        Parcelable savedState = agendaView.onSaveInstanceState();
+        agendaView.onRestoreInstanceState(savedState);
+        AgendaAdapter newAdapter = new AgendaAdapter(RuntimeEnvironment.application) { };
+        agendaView.setAdapter(newAdapter);
+        assertThat(newAdapter.getItemCount()).isEqualTo(expected);
     }
 
     @After
@@ -159,6 +197,7 @@ public class AgendaViewTest {
             agendaView.setLayoutParams(new FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
             setContentView(agendaView);
+            agendaView.setAdapter(new AgendaAdapter(this) { });
         }
     }
 }

@@ -112,6 +112,10 @@ public class EventCalendarView extends ViewPager {
                     notifyDayChange(mAdapter.getCalendar(position));
                 }
                 mDragging = false;
+                // trigger same scroll state changed logic, which would not be fired if not visible
+                if (getVisibility() != VISIBLE) {
+                    onPageScrollStateChanged(SCROLL_STATE_IDLE);
+                }
             }
 
             @Override
