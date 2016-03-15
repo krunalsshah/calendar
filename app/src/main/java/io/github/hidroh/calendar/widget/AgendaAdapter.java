@@ -494,6 +494,7 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
         }
 
         void setCursor(Cursor cursor, EventGroup.EventObserver eventObserver) {
+            deactivate(); // deactivate previously set cursor if any
             cursor.registerContentObserver(mContentObserver);
             mCursor = cursor;
             mEventObserver = eventObserver;

@@ -1,6 +1,10 @@
 package io.github.hidroh.calendar;
 
+import android.content.ShadowAsyncQueryHandler;
 import android.content.pm.PackageManager;
+import android.database.ContentObserver;
+import android.os.Bundle;
+import android.provider.CalendarContract;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -14,10 +18,13 @@ import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricGradleTestRunner;
 import org.robolectric.annotation.Config;
+import org.robolectric.fakes.RoboCursor;
 import org.robolectric.fakes.RoboMenu;
 import org.robolectric.internal.ShadowExtractor;
+import org.robolectric.shadows.ShadowApplication;
 import org.robolectric.util.ActivityController;
 
+import java.util.Arrays;
 import java.util.Calendar;
 
 import io.github.hidroh.calendar.test.shadows.ShadowLinearLayoutManager;
@@ -30,7 +37,8 @@ import static org.assertj.android.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.robolectric.Shadows.shadowOf;
 
-@Config(shadows = {ShadowViewPager.class, ShadowRecyclerView.class, ShadowLinearLayoutManager.class})
+@SuppressWarnings("unchecked")
+@Config(shadows = {ShadowViewPager.class, ShadowRecyclerView.class, ShadowLinearLayoutManager.class, ShadowAsyncQueryHandler.class})
 @RunWith(RobolectricGradleTestRunner.class)
 public class MainActivityTest {
     private ActivityController<TestMainActivity> controller;
@@ -124,6 +132,27 @@ public class MainActivityTest {
         assertThat(activity).isFinishing();
     }
 
+    @Test
+    public void testQueryCalendarProvider() {
+        RoboCursor cursor = new TestRoboCursor();
+        cursor.setResults(new Object[][]{
+                new Object[]{"Event 1", CalendarDate.today().getTimeInMillis()}
+        });
+        shadowOf(ShadowApplication.getInstance().getContentResolver())
+                .setCursor(CalendarContract.Events.CONTENT_URI, cursor);
+
+        // trigger loading from provider
+        agendaView.getAdapter().bindViewHolder(agendaView.getAdapter()
+                .createViewHolder(agendaView, 0), 0);
+        Robolectric.flushBackgroundThreadScheduler();
+
+        // binding from provider should replace placeholder
+        RecyclerView.ViewHolder viewHolder = agendaView.getAdapter()
+                .createViewHolder(agendaView, 1);
+        agendaView.getAdapter().bindViewHolder(viewHolder, 1);
+        assertThat((TextView) viewHolder.itemView).hasTextString("Event 1");
+    }
+
     @After
     public void tearDown() {
         controller.pause().stop().destroy();
@@ -139,7 +168,6 @@ public class MainActivityTest {
                 .findFirstVisibleItemPosition();
         RecyclerView.ViewHolder viewHolder = agendaView.getAdapter()
                 .createViewHolder(agendaView, topPosition);
-        //noinspection unchecked
         agendaView.getAdapter().bindViewHolder(viewHolder, topPosition);
         assertThat((TextView) viewHolder.itemView)
                 .hasTextString(CalendarUtils.toDayString(activity,
@@ -161,6 +189,28 @@ public class MainActivityTest {
         @Override
         protected int checkPermission(@NonNull String permission) {
             return permissionCheckResult;
+        }
+    }
+
+    static class TestRoboCursor extends RoboCursor {
+        public TestRoboCursor() {
+            setColumnNames(Arrays.asList(CalendarContract.Events.TITLE,
+                    CalendarContract.Events.DTSTART));
+        }
+
+        @Override
+        public void registerContentObserver(ContentObserver observer) {
+            // no op
+        }
+
+        @Override
+        public void unregisterContentObserver(ContentObserver observer) {
+            // no op
+        }
+
+        @Override
+        public void setExtras(Bundle extras) {
+            // no op
         }
     }
 }

@@ -1,8 +1,13 @@
 package io.github.hidroh.calendar.widget;
 
+import android.database.ContentObserver;
+import android.database.Cursor;
+import android.database.MatrixCursor;
 import android.os.Bundle;
 import android.os.Parcelable;
+import android.provider.CalendarContract;
 import android.support.annotation.Nullable;
+import android.support.v4.util.LongSparseArray;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -40,8 +45,9 @@ import static org.mockito.Mockito.verify;
 @RunWith(RobolectricGradleTestRunner.class)
 public class AgendaViewTest {
     private ActivityController<TestActivity> controller;
+    private TestActivity activity;
     private AgendaView agendaView;
-    private RecyclerView.Adapter adapter;
+    private AgendaAdapter adapter;
     private final long todayMillis = CalendarDate.today().getTimeInMillis();
     private final long lastDayMillis = todayMillis +
             DateUtils.DAY_IN_MILLIS * (AgendaAdapter.MONTH_SIZE - 1);
@@ -50,9 +56,9 @@ public class AgendaViewTest {
     @Before
     public void setUp() {
         controller = Robolectric.buildActivity(TestActivity.class);
-        TestActivity activity = controller.create().start().resume().visible().get();
+        activity = controller.create().start().resume().visible().get();
         agendaView = (AgendaView) activity.findViewById(R.id.agenda_view);
-        adapter = agendaView.getAdapter();
+        adapter = (AgendaAdapter) agendaView.getAdapter();
         layoutManager = (LinearLayoutManager) agendaView.getLayoutManager();
     }
 
@@ -160,13 +166,93 @@ public class AgendaViewTest {
     }
 
     @Test
+    public void testBindEmptyCursor() {
+        // initial state
+        assertThat((TextView) createBindViewHolder(1).itemView)
+                .hasTextString(R.string.no_event);
+
+        // bind empty cursor should not replace placeholder
+        TestCursor cursor = new TestCursor();
+        adapter.bindEvents(todayMillis, cursor);
+        assertThat((TextView) createBindViewHolder(1).itemView)
+                .hasTextString(R.string.no_event);
+    }
+
+    @Test
+    public void testBindCursor() {
+        // initial state
+        assertThat((TextView) createBindViewHolder(1).itemView)
+                .hasTextString(R.string.no_event);
+
+        // trigger cursor loading and binding
+        TestCursor cursor = new TestCursor();
+        cursor.addRow(new Object[]{"Event 1", todayMillis + 1000});
+        cursor.addRow(new Object[]{"Event 2", todayMillis + 2000});
+        activity.cursors.put(todayMillis, cursor);
+        createBindViewHolder(0);
+
+        // non empty cursor should replace placeholder and add extra item
+        assertThat((TextView) createBindViewHolder(1).itemView)
+                .hasTextString("Event 1");
+        assertThat((TextView) createBindViewHolder(2).itemView)
+                .hasTextString("Event 2");
+
+        // deactivate adapter should close cursor
+        assertThat(cursor).isNotClosed();
+        adapter.deactivate();
+        assertThat(cursor).isClosed();
+    }
+
+    @Test
+    public void testCursorContentChange() {
+        // initial state
+        assertThat((TextView) createBindViewHolder(1).itemView)
+                .hasTextString(R.string.no_event);
+
+        // trigger cursor loading and binding
+        TestCursor noEventCursor = new TestCursor();
+        activity.cursors.put(todayMillis, noEventCursor);
+        createBindViewHolder(0);
+
+        // bind empty cursor should not replace placeholder
+        assertThat((TextView) createBindViewHolder(1).itemView)
+                .hasTextString(R.string.no_event);
+
+        // trigger content change notification
+        TestCursor multiEventCursor = new TestCursor();
+        multiEventCursor.addRow(new Object[]{"Event 1", todayMillis + 1000});
+        multiEventCursor.addRow(new Object[]{"Event 2", todayMillis + 2000});
+        activity.cursors.put(todayMillis, multiEventCursor);
+        noEventCursor.notifyContentChange(false);
+
+        // content change should deactivate prev cursor, update placeholder and add extra item
+        assertThat(noEventCursor).isClosed();
+        assertThat((TextView) createBindViewHolder(1).itemView)
+                .hasTextString("Event 1");
+        assertThat((TextView) createBindViewHolder(2).itemView)
+                .hasTextString("Event 2");
+
+        // trigger content change notification
+        TestCursor singleEventCursor = new TestCursor();
+        singleEventCursor.addRow(new Object[]{"Event 3", todayMillis + 3000});
+        activity.cursors.put(todayMillis, singleEventCursor);
+        multiEventCursor.notifyContentChange(false);
+
+        // content change should deactivate prev cursor, update existing item, remove deleted item
+        assertThat(multiEventCursor).isClosed();
+        assertThat((TextView) createBindViewHolder(1).itemView)
+                .hasTextString("Event 3");
+        assertHasDate(createBindViewHolder(2), todayMillis + DateUtils.DAY_IN_MILLIS);
+    }
+
+    @Test
     public void testStateRestoration() {
         agendaView.smoothScrollToPosition(0);
         int expected = AgendaAdapter.MONTH_SIZE * 2 * 2; // prepended
         assertThat(adapter.getItemCount()).isEqualTo(expected);
         Parcelable savedState = agendaView.onSaveInstanceState();
         agendaView.onRestoreInstanceState(savedState);
-        AgendaAdapter newAdapter = new AgendaAdapter(RuntimeEnvironment.application) { };
+        AgendaAdapter newAdapter = new AgendaAdapter(activity) { };
         agendaView.setAdapter(newAdapter);
         assertThat(newAdapter.getItemCount()).isEqualTo(expected);
     }
@@ -184,11 +270,13 @@ public class AgendaViewTest {
     private RecyclerView.ViewHolder createBindViewHolder(int position) {
         RecyclerView.ViewHolder viewHolder = adapter.createViewHolder(agendaView,
                 adapter.getItemViewType(position));
-        adapter.bindViewHolder(viewHolder, position);
+        adapter.bindViewHolder((AgendaAdapter.RowViewHolder) viewHolder, position);
         return viewHolder;
     }
 
     static class TestActivity extends AppCompatActivity {
+        LongSparseArray<Cursor> cursors = new LongSparseArray<>();
+
         @Override
         protected void onCreate(@Nullable Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
@@ -197,7 +285,39 @@ public class AgendaViewTest {
             agendaView.setLayoutParams(new FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
             setContentView(agendaView);
-            agendaView.setAdapter(new AgendaAdapter(this) { });
+            agendaView.setAdapter(new AgendaAdapter(this) {
+                @Override
+                protected void loadEvents(long timeMillis) {
+                    bindEvents(timeMillis, cursors.get(timeMillis) != null ?
+                            cursors.get(timeMillis) : new TestCursor());
+                }
+            });
+        }
+    }
+
+    static class TestCursor extends MatrixCursor {
+        private ContentObserver contentObserver;
+
+        public TestCursor() {
+            super(new String[]{
+                    CalendarContract.Events.TITLE,
+                    CalendarContract.Events.DTSTART});
+        }
+
+        @Override
+        public void registerContentObserver(ContentObserver observer) {
+            contentObserver = observer;
+        }
+
+        @Override
+        public void unregisterContentObserver(ContentObserver observer) {
+            contentObserver = null;
+        }
+
+        public void notifyContentChange(boolean selfChange) {
+            if (contentObserver != null) {
+                contentObserver.onChange(selfChange);
+            }
         }
     }
 }
