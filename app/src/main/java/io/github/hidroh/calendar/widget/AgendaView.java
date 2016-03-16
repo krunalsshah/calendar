@@ -135,7 +135,7 @@ public class AgendaView extends RecyclerView {
     }
 
     private void init() {
-        setHasFixedSize(true);
+        setHasFixedSize(false);
         setLayoutManager(new AgendaLinearLayoutManager(getContext()));
         addItemDecoration(new DividerItemDecoration(getContext()));
         setItemAnimator(null);
