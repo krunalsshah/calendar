@@ -36,6 +36,10 @@ public class CalendarUtils {
                         DateUtils.FORMAT_SHOW_YEAR);
     }
 
+    public static String toTimeString(Context context, long timeMillis) {
+        return DateUtils.formatDateTime(context, timeMillis, DateUtils.FORMAT_SHOW_TIME);
+    }
+
     @SuppressWarnings("ConstantConditions")
     public static boolean sameMonth(long first, long second) {
         if (isNotTime(first) || isNotTime(second)) {

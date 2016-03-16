@@ -139,20 +139,21 @@ public class MainActivityTest {
     public void testQueryDay() {
         RoboCursor cursor = new TestRoboCursor();
         cursor.setResults(new Object[][]{
-                new Object[]{"Event 1", CalendarUtils.today()}
+                new Object[]{"Event 1", CalendarUtils.today(), CalendarUtils.today(), 0}
         });
         shadowOf(ShadowApplication.getInstance().getContentResolver())
                 .setCursor(CalendarContract.Events.CONTENT_URI, cursor);
 
         // trigger loading from provider
         agendaView.getAdapter().bindViewHolder(agendaView.getAdapter()
-                .createViewHolder(agendaView, 0), 0);
+                .createViewHolder(agendaView, agendaView.getAdapter().getItemViewType(0)), 0);
 
         // binding from provider should replace placeholder
         RecyclerView.ViewHolder viewHolder = agendaView.getAdapter()
-                .createViewHolder(agendaView, 1);
+                .createViewHolder(agendaView, agendaView.getAdapter().getItemViewType(1));
         agendaView.getAdapter().bindViewHolder(viewHolder, 1);
-        assertThat((TextView) viewHolder.itemView).hasTextString("Event 1");
+        assertThat((TextView) viewHolder.itemView.findViewById(R.id.text_view_title))
+                .hasTextString("Event 1");
     }
 
     @After
@@ -168,8 +169,8 @@ public class MainActivityTest {
     private void assertAgendaViewTopDay(long topDayMillis) {
         int topPosition = ((LinearLayoutManager) agendaView.getLayoutManager())
                 .findFirstVisibleItemPosition();
-        RecyclerView.ViewHolder viewHolder = agendaView.getAdapter()
-                .createViewHolder(agendaView, topPosition);
+        RecyclerView.ViewHolder viewHolder = agendaView.getAdapter().createViewHolder(
+                agendaView, agendaView.getAdapter().getItemViewType(topPosition));
         agendaView.getAdapter().bindViewHolder(viewHolder, topPosition);
         assertThat((TextView) viewHolder.itemView)
                 .hasTextString(CalendarUtils.toDayString(activity,
@@ -197,7 +198,9 @@ public class MainActivityTest {
     static class TestRoboCursor extends RoboCursor {
         public TestRoboCursor() {
             setColumnNames(Arrays.asList(CalendarContract.Events.TITLE,
-                    CalendarContract.Events.DTSTART));
+                    CalendarContract.Events.DTSTART,
+                    CalendarContract.Events.DTEND,
+                    CalendarContract.Events.ALL_DAY));
         }
 
         @Override

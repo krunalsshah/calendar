@@ -68,14 +68,33 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
         if (mLock) {
             return;
         }
+        AdapterItem item = getAdapterItem(position);
         if (holder instanceof GroupViewHolder) {
             loadEvents(position);
-        }
-        AdapterItem item = getAdapterItem(position);
-        if (item instanceof NoEventItem) {
-            holder.textView.setText(R.string.no_event);
+            ((GroupViewHolder) holder).textView.setText(item.mTitle);
         } else {
-            holder.textView.setText(item.mTitle);
+            ContentViewHolder contentHolder = (ContentViewHolder) holder;
+            if (item instanceof NoEventItem) {
+                contentHolder.textViewTime.setVisibility(View.GONE);
+                contentHolder.textViewTitle.setText(R.string.no_event);
+            } else { // EventItem
+                EventItem eventItem = (EventItem) item;
+                contentHolder.textViewTime.setVisibility(View.VISIBLE);
+                if (eventItem.mIsAllDay) {
+                    contentHolder.textViewTime.setText(R.string.all_day);
+                } else {
+                    contentHolder.textViewTime.setText(CalendarUtils.toTimeString(
+                            contentHolder.textViewTime.getContext(),
+                            eventItem.mStartTimeMillis));
+                }
+                contentHolder.textViewTitle.setText(item.mTitle);
+            }
+            contentHolder.itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    // TODO
+                }
+            });
         }
     }
 
@@ -311,18 +330,18 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
     }
 
     static abstract class RowViewHolder extends RecyclerView.ViewHolder {
-        final TextView textView;
 
         public RowViewHolder(View itemView) {
             super(itemView);
-            textView = (TextView) itemView;
         }
     }
 
     static class GroupViewHolder extends RowViewHolder {
+        final TextView textView;
 
         public GroupViewHolder(View itemView) {
             super(itemView);
+            textView = (TextView) itemView;
             textView.setTransformationMethod(
                     new AllCapsTransformationMethod(textView.getContext()));
         }
@@ -330,8 +349,13 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
 
     static class ContentViewHolder extends RowViewHolder {
 
+        final TextView textViewTitle;
+        final TextView textViewTime;
+
         public ContentViewHolder(View itemView) {
             super(itemView);
+            textViewTitle = (TextView) itemView.findViewById(R.id.text_view_title);
+            textViewTime = (TextView) itemView.findViewById(R.id.text_view_time);
         }
     }
 
@@ -490,7 +514,8 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
             return new EventItem(
                     mCursor.getString(mCursor.getColumnIndex(CalendarContract.Events.TITLE)),
                     mTimeMillis,
-                    mCursor.getLong(mCursor.getColumnIndex(CalendarContract.Events.DTSTART)));
+                    mCursor.getLong(mCursor.getColumnIndex(CalendarContract.Events.DTSTART)),
+                    mCursor.getInt(mCursor.getColumnIndex(CalendarContract.Events.ALL_DAY)) == 1);
         }
 
         void setCursor(Cursor cursor, EventGroup.EventObserver eventObserver) {
@@ -522,22 +547,26 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
                 return new EventItem[size];
             }
         };
-        private long mStartTimeMillis;
+        boolean mIsAllDay;
+        long mStartTimeMillis;
 
-        EventItem(String title, long timeMillis, long startTimeMillis) {
+        EventItem(String title, long timeMillis, long startTimeMillis, boolean allDay) {
             super(title, timeMillis);
             this.mStartTimeMillis = startTimeMillis;
+            this.mIsAllDay = allDay;
         }
 
         private EventItem(Parcel source) {
             super(source);
             mStartTimeMillis = source.readLong();
+            mIsAllDay = source.readInt() == 1;
         }
 
         @Override
         public void writeToParcel(Parcel dest, int flags) {
             super.writeToParcel(dest, flags);
             dest.writeLong(mStartTimeMillis);
+            dest.writeInt(mIsAllDay ? 1 : 0);
         }
     }
 
@@ -555,7 +584,7 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
         };
 
         NoEventItem(String title, long timeMillis, long startTimeMillis) {
-            super(title, timeMillis, startTimeMillis);
+            super(title, timeMillis, startTimeMillis, true);
         }
 
         NoEventItem(Parcel source) {

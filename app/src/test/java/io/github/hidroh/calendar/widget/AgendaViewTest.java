@@ -9,6 +9,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.format.DateUtils;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.TextView;
@@ -65,7 +66,7 @@ public class AgendaViewTest {
         assertThat(adapter.getItemCount()).isEqualTo(AgendaAdapter.BLOCK_SIZE * 2);
         // first visible item should be today by default
         assertHasDate(createBindViewHolder(0), todayMillis);
-        assertThat((TextView) createBindViewHolder(1).itemView)
+        assertThat((TextView) createBindViewHolder(1).itemView.findViewById(R.id.text_view_title))
                 .hasText(R.string.no_event);
     }
 
@@ -165,33 +166,39 @@ public class AgendaViewTest {
     @Test
     public void testBindEmptyCursor() {
         // initial state
-        assertThat((TextView) createBindViewHolder(1).itemView)
+        assertThat((TextView) createBindViewHolder(1).itemView.findViewById(R.id.text_view_title))
                 .hasTextString(R.string.no_event);
 
         // bind empty cursor should not replace placeholder
         TestCursor cursor = new TestCursor();
         adapter.bindEvents(todayMillis, cursor);
-        assertThat((TextView) createBindViewHolder(1).itemView)
+        assertThat((TextView) createBindViewHolder(1).itemView.findViewById(R.id.text_view_title))
                 .hasTextString(R.string.no_event);
     }
 
     @Test
     public void testBindCursor() {
         // initial state
-        assertThat((TextView) createBindViewHolder(1).itemView)
+        assertThat((TextView) createBindViewHolder(1).itemView.findViewById(R.id.text_view_title))
                 .hasTextString(R.string.no_event);
 
         // trigger cursor loading and binding
         TestCursor cursor = new TestCursor();
-        cursor.addRow(new Object[]{"Event 1", todayMillis + 1000, todayMillis + 1000, 0});
-        cursor.addRow(new Object[]{"Event 2", todayMillis + 2000, todayMillis + 2000, 0});
+        cursor.addRow(new Object[]{"Event 1", todayMillis + 28800000, todayMillis + 28800000, 0}); // 8AM UTC
+        cursor.addRow(new Object[]{"Event 2", todayMillis, todayMillis, 1}); // all day
         activity.cursors.put(todayMillis, cursor);
         createBindViewHolder(0);
 
         // non empty cursor should replace placeholder and add extra item
-        assertThat((TextView) createBindViewHolder(1).itemView)
+        View item1 = createBindViewHolder(1).itemView;
+        assertThat((TextView) item1.findViewById(R.id.text_view_time))
+                .hasTextString(CalendarUtils.toTimeString(activity, todayMillis + 28800000));
+        assertThat((TextView) item1.findViewById(R.id.text_view_title))
                 .hasTextString("Event 1");
-        assertThat((TextView) createBindViewHolder(2).itemView)
+        View item2 = createBindViewHolder(2).itemView;
+        assertThat((TextView) item2.findViewById(R.id.text_view_time))
+                .hasTextString(R.string.all_day);
+        assertThat((TextView) item2.findViewById(R.id.text_view_title))
                 .hasTextString("Event 2");
 
         // deactivate adapter should close cursor
@@ -203,7 +210,7 @@ public class AgendaViewTest {
     @Test
     public void testCursorContentChange() {
         // initial state
-        assertThat((TextView) createBindViewHolder(1).itemView)
+        assertThat((TextView) createBindViewHolder(1).itemView.findViewById(R.id.text_view_title))
                 .hasTextString(R.string.no_event);
 
         // trigger cursor loading and binding
@@ -212,7 +219,7 @@ public class AgendaViewTest {
         createBindViewHolder(0);
 
         // bind empty cursor should not replace placeholder
-        assertThat((TextView) createBindViewHolder(1).itemView)
+        assertThat((TextView) createBindViewHolder(1).itemView.findViewById(R.id.text_view_title))
                 .hasTextString(R.string.no_event);
 
         // trigger content change notification
@@ -224,9 +231,9 @@ public class AgendaViewTest {
 
         // content change should deactivate prev cursor, update placeholder and add extra item
         assertThat(noEventCursor).isClosed();
-        assertThat((TextView) createBindViewHolder(1).itemView)
+        assertThat((TextView) createBindViewHolder(1).itemView.findViewById(R.id.text_view_title))
                 .hasTextString("Event 1");
-        assertThat((TextView) createBindViewHolder(2).itemView)
+        assertThat((TextView) createBindViewHolder(2).itemView.findViewById(R.id.text_view_title))
                 .hasTextString("Event 2");
 
         // trigger content change notification
@@ -237,7 +244,7 @@ public class AgendaViewTest {
 
         // content change should deactivate prev cursor, update existing item, remove deleted item
         assertThat(multiEventCursor).isClosed();
-        assertThat((TextView) createBindViewHolder(1).itemView)
+        assertThat((TextView) createBindViewHolder(1).itemView.findViewById(R.id.text_view_title))
                 .hasTextString("Event 3");
         assertHasDate(createBindViewHolder(2), todayMillis + DateUtils.DAY_IN_MILLIS);
     }
