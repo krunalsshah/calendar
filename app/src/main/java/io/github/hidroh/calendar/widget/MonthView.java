@@ -6,13 +6,11 @@ import android.provider.CalendarContract;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.format.DateUtils;
-import android.text.style.ForegroundColorSpan;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -28,6 +26,7 @@ import java.util.Set;
 import io.github.hidroh.calendar.CalendarUtils;
 import io.github.hidroh.calendar.R;
 import io.github.hidroh.calendar.text.style.CircleSpan;
+import io.github.hidroh.calendar.text.style.UnderDotSpan;
 
 /**
  * Custom widget to display a grid of days in a month, represented by a {@link Calendar}
@@ -177,10 +176,8 @@ class MonthView extends RecyclerView {
                     if (mSelectedPosition == adapterPosition) {
                         spannable.setSpan(new CircleSpan(textView.getContext()), 0,
                                 dayString.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    }
-                    if (mEvents.contains(dayIndex)) {
-                        spannable.setSpan(new ForegroundColorSpan(
-                                ContextCompat.getColor(textView.getContext(), R.color.colorAccent)),
+                    } else if (mEvents.contains(dayIndex)) {
+                        spannable.setSpan(new UnderDotSpan(textView.getContext()),
                                 0, dayString.length(),
                                 Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                     }

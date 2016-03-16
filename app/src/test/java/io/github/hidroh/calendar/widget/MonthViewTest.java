@@ -5,7 +5,6 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.text.SpannableString;
-import android.text.style.ForegroundColorSpan;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.TextView;
@@ -28,9 +27,9 @@ import io.github.hidroh.calendar.R;
 import io.github.hidroh.calendar.test.TestCursor;
 import io.github.hidroh.calendar.test.shadows.ShadowViewHolder;
 import io.github.hidroh.calendar.text.style.CircleSpan;
+import io.github.hidroh.calendar.text.style.UnderDotSpan;
 
 import static io.github.hidroh.calendar.test.assertions.SpannableStringAssert.assertThat;
-
 import static org.assertj.android.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.anyLong;
@@ -168,7 +167,7 @@ public class MonthViewTest {
         CharSequence actual = ((TextView) createBindViewHolder(10).itemView)
                 .getText(); // 02-March-2016
         assertThat(actual).isInstanceOf(SpannableString.class);
-        assertThat((SpannableString) actual).doesNotHaveSpan(ForegroundColorSpan.class);
+        assertThat((SpannableString) actual).doesNotHaveSpan(UnderDotSpan.class);
 
         // swapping cursor should decorate it
         TestCursor cursor = new TestCursor();
@@ -177,7 +176,7 @@ public class MonthViewTest {
         monthView.swapCursor(cursor);
         actual = ((TextView) createBindViewHolder(10).itemView).getText(); // 02-March-2016
         assertThat(actual).isInstanceOf(SpannableString.class);
-        assertThat((SpannableString) actual).hasSpan(ForegroundColorSpan.class);
+        assertThat((SpannableString) actual).hasSpan(UnderDotSpan.class);
     }
 
     @After

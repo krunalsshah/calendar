@@ -11,30 +11,30 @@ import android.text.style.ReplacementSpan;
 import io.github.hidroh.calendar.R;
 
 /**
- * Text span that draws a circle around text, pads to cover at least 2 characters
+ * Text span that draws a dot under text
  */
-public class CircleSpan extends ReplacementSpan {
+public class UnderDotSpan extends ReplacementSpan {
 
-    private final float mPadding;
-    private final int mCircleColor;
+    private final float mSize;
+    private final int mDotColor;
     private final int mTextColor;
 
-    public CircleSpan(Context context) {
+    public UnderDotSpan(Context context) {
         super();
         TypedArray ta = context.getTheme().obtainStyledAttributes(new int[]{
                 R.attr.colorAccent,
-                android.R.attr.textColorPrimaryInverse
+                android.R.attr.textColorPrimary
         });
-        mCircleColor = ta.getColor(0, ContextCompat.getColor(context, R.color.colorAccent));
+        mDotColor = ta.getColor(0, ContextCompat.getColor(context, R.color.colorAccent));
         //noinspection ResourceType
         mTextColor = ta.getColor(1, 0);
         ta.recycle();
-        mPadding = context.getResources().getDimension(R.dimen.padding_circle);
+        mSize = context.getResources().getDimension(R.dimen.dot_size);
     }
 
     @Override
     public int getSize(Paint paint, CharSequence text, int start, int end, Paint.FontMetricsInt fm) {
-        return Math.round(paint.measureText(text, start, end) + mPadding * 2); // left + right
+        return Math.round(paint.measureText(text, start, end));
     }
 
     @Override
@@ -43,13 +43,12 @@ public class CircleSpan extends ReplacementSpan {
             return;
         }
         float textSize = paint.measureText(text, start, end);
-        paint.setColor(mCircleColor);
-        // ensure radius covers at least 2 characters even if there is only 1
-        canvas.drawCircle(x + textSize / 2 + mPadding, // center X
-                (top + bottom) / 2, // center Y
-                (text.length() == 1 ? textSize : textSize / 2) + mPadding, // radius
+        paint.setColor(mDotColor);
+        canvas.drawCircle(x + textSize / 2, // text center X
+                bottom + mSize, // dot center Y
+                mSize / 2, // radius
                 paint);
         paint.setColor(mTextColor);
-        canvas.drawText(text, start, end, mPadding + x, y, paint);
+        canvas.drawText(text, start, end, x, y, paint);
     }
 }
