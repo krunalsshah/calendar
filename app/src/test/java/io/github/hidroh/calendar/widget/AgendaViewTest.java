@@ -27,7 +27,6 @@ import org.robolectric.annotation.Config;
 import org.robolectric.internal.ShadowExtractor;
 import org.robolectric.util.ActivityController;
 
-import io.github.hidroh.calendar.CalendarDate;
 import io.github.hidroh.calendar.CalendarUtils;
 import io.github.hidroh.calendar.R;
 import io.github.hidroh.calendar.test.shadows.ShadowLinearLayoutManager;
@@ -35,7 +34,7 @@ import io.github.hidroh.calendar.test.shadows.ShadowRecyclerView;
 
 import static org.assertj.android.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -48,7 +47,7 @@ public class AgendaViewTest {
     private TestActivity activity;
     private AgendaView agendaView;
     private AgendaAdapter adapter;
-    private final long todayMillis = CalendarDate.today().getTimeInMillis();
+    private final long todayMillis = CalendarUtils.today();
     private final long lastDayMillis = todayMillis +
             DateUtils.DAY_IN_MILLIS * (AgendaAdapter.MONTH_SIZE - 1);
     private LinearLayoutManager layoutManager;
@@ -120,7 +119,7 @@ public class AgendaViewTest {
     public void testChangeSelectedDay() {
         long tomorrowMillis = todayMillis + DateUtils.DAY_IN_MILLIS;
         assertHasDate(createBindViewHolder(0), todayMillis);
-        agendaView.setSelectedDay(CalendarDate.fromTime(tomorrowMillis));
+        agendaView.setSelectedDay(tomorrowMillis);
         assertHasDate(createBindViewHolder(layoutManager.findFirstVisibleItemPosition()),
                 tomorrowMillis);
     }
@@ -129,7 +128,7 @@ public class AgendaViewTest {
     public void testPrependSelectedDay() {
         long beforeFirstDayMillis = todayMillis - DateUtils.DAY_IN_MILLIS;
         assertHasDate(createBindViewHolder(0), todayMillis);
-        agendaView.setSelectedDay(CalendarDate.fromTime(beforeFirstDayMillis));
+        agendaView.setSelectedDay(beforeFirstDayMillis);
         assertHasDate(createBindViewHolder(layoutManager.findFirstVisibleItemPosition()),
                 beforeFirstDayMillis);
         assertHasDate(createBindViewHolder(0), todayMillis -
@@ -140,7 +139,7 @@ public class AgendaViewTest {
     public void testAppendSelectedDay() {
         long afterLastDayMillis = lastDayMillis + DateUtils.DAY_IN_MILLIS;
         assertHasDate(createBindViewHolder(0), todayMillis);
-        agendaView.setSelectedDay(CalendarDate.fromTime(afterLastDayMillis));
+        agendaView.setSelectedDay(afterLastDayMillis);
         assertHasDate(createBindViewHolder(layoutManager.findFirstVisibleItemPosition()),
                 afterLastDayMillis);
         assertHasDate(createBindViewHolder(adapter.getItemCount() - 2),
@@ -153,16 +152,16 @@ public class AgendaViewTest {
         agendaView.setOnDateChangeListener(listener);
 
         // set day programmatically should not trigger listener
-        agendaView.setSelectedDay(CalendarDate.fromTime(todayMillis + DateUtils.DAY_IN_MILLIS));
-        verify(listener, never()).onSelectedDayChange(any(CalendarDate.class));
+        agendaView.setSelectedDay(todayMillis + DateUtils.DAY_IN_MILLIS);
+        verify(listener, never()).onSelectedDayChange(anyLong());
 
         // set day via scrolling should trigger listener
         agendaView.smoothScrollToPosition(1);
-        verify(listener).onSelectedDayChange(any(CalendarDate.class));
+        verify(listener).onSelectedDayChange(anyLong());
 
         // scroll to an item of same last selected date should not trigger listener
         agendaView.smoothScrollToPosition(1);
-        verify(listener).onSelectedDayChange(any(CalendarDate.class));
+        verify(listener).onSelectedDayChange(anyLong());
     }
 
     @Test

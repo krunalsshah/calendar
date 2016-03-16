@@ -1,13 +1,13 @@
 package io.github.hidroh.calendar.widget;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.SpannableString;
 import android.text.Spanned;
+import android.text.format.DateUtils;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,7 +17,7 @@ import android.widget.TextView;
 import java.text.DateFormatSymbols;
 import java.util.Calendar;
 
-import io.github.hidroh.calendar.CalendarDate;
+import io.github.hidroh.calendar.CalendarUtils;
 import io.github.hidroh.calendar.R;
 import io.github.hidroh.calendar.text.style.CircleSpan;
 
@@ -26,8 +26,7 @@ import io.github.hidroh.calendar.text.style.CircleSpan;
  */
 class MonthView extends RecyclerView {
     private static final int SPANS_COUNT = 7; // days in week
-    private final CalendarDate mSelectedDay = CalendarDate.today();
-    @VisibleForTesting CalendarDate mCalendarDate;
+    @VisibleForTesting long mMonthMillis;
     private EventAdapter mAdapter;
     private OnDateChangeListener mListener;
 
@@ -37,9 +36,9 @@ class MonthView extends RecyclerView {
     interface OnDateChangeListener {
         /**
          * Fired when a new selection has been made via UI interaction
-         * @param calendarDate  calendar object representing selected day
+         * @param dayMillis  selected day in milliseconds
          */
-        void onSelectedDayChange(@NonNull CalendarDate calendarDate);
+        void onSelectedDayChange(long dayMillis);
     }
 
     public MonthView(Context context) {
@@ -66,16 +65,22 @@ class MonthView extends RecyclerView {
     private void init() {
         setLayoutManager(new GridLayoutManager(getContext(), SPANS_COUNT));
         setHasFixedSize(true);
-        setCalendar(CalendarDate.today());
+        setCalendar(CalendarUtils.today());
     }
 
     /**
      * Sets month to display
-     * @param calendarDate  calendar object representing month to display
+     * @param monthMillis  month to display in milliseconds
      */
-    void setCalendar(@NonNull CalendarDate calendarDate) {
-        mCalendarDate = calendarDate;
-        mAdapter = new EventAdapter(calendarDate);
+    void setCalendar(long monthMillis) {
+        if (CalendarUtils.isNotTime(monthMillis)) {
+            throw new IllegalArgumentException("Invalid timestamp value");
+        }
+        if (CalendarUtils.sameMonth(mMonthMillis, monthMillis)) {
+            return;
+        }
+        mMonthMillis = monthMillis;
+        mAdapter = new EventAdapter(monthMillis);
         mAdapter.registerAdapterDataObserver(new AdapterDataObserver() {
             @Override
             public void onItemRangeChanged(int positionStart, int itemCount, Object payload) {
@@ -83,10 +88,7 @@ class MonthView extends RecyclerView {
                     return;
                 }
                 if (payload instanceof SelectionPayload) {
-                    mSelectedDay.set(mCalendarDate.get(Calendar.YEAR),
-                            mCalendarDate.get(Calendar.MONTH),
-                            ((SelectionPayload) payload).dayOfMonth);
-                    mListener.onSelectedDayChange(mSelectedDay);
+                    mListener.onSelectedDayChange(((SelectionPayload) payload).timeMillis);
                 }
             }
         });
@@ -95,19 +97,18 @@ class MonthView extends RecyclerView {
 
     /**
      * Sets selected day if it falls within this month, unset any previously selected day otherwise
-     * @param selectedDay    selected day or null
+     * @param dayMillis    selected day in milliseconds, {@link CalendarUtils#NO_TIME_MILLIS} to clear
      */
-    void setSelectedDay(@Nullable CalendarDate selectedDay) {
-        if (mCalendarDate == null) {
+    void setSelectedDay(long dayMillis) {
+        if (CalendarUtils.isNotTime(mMonthMillis)) {
             return;
         }
-        if (selectedDay == null) {
-            mAdapter.setSelectedDay(null);
-        } else if (mCalendarDate.get(Calendar.YEAR) == selectedDay.get(Calendar.YEAR) &&
-                mCalendarDate.get(Calendar.MONTH) == selectedDay.get(Calendar.MONTH)) {
-            mAdapter.setSelectedDay(selectedDay);
+        if (CalendarUtils.isNotTime(dayMillis)) {
+            mAdapter.setSelectedDay(CalendarUtils.NO_TIME_MILLIS);
+        } else if (CalendarUtils.sameMonth(mMonthMillis, dayMillis)) {
+            mAdapter.setSelectedDay(dayMillis);
         } else {
-            mAdapter.setSelectedDay(null);
+            mAdapter.setSelectedDay(CalendarUtils.NO_TIME_MILLIS);
         }
     }
 
@@ -117,13 +118,14 @@ class MonthView extends RecyclerView {
         private final String[] mWeekdays;
         private final int mStartOffset;
         private final int mDays;
+        private final long mBaseTimeMillis;
         private int mSelectedPosition = -1;
 
-        public EventAdapter(CalendarDate cal) {
+        public EventAdapter(long monthMillis) {
             mWeekdays = DateFormatSymbols.getInstance().getShortWeekdays();
-            cal.set(Calendar.DAY_OF_MONTH, 1);
-            mStartOffset = cal.get(Calendar.DAY_OF_WEEK) - cal.getFirstDayOfWeek() + SPANS_COUNT;
-            mDays = mStartOffset + cal.getActualMaximum(Calendar.DAY_OF_MONTH);
+            mBaseTimeMillis = CalendarUtils.monthFirstDay(monthMillis);
+            mStartOffset = CalendarUtils.monthFirstDayOffset(mBaseTimeMillis) + SPANS_COUNT;
+            mDays = mStartOffset + CalendarUtils.monthSize(monthMillis);
         }
 
         @Override
@@ -151,11 +153,12 @@ class MonthView extends RecyclerView {
                 } else {
                     final int adapterPosition = holder.getAdapterPosition();
                     TextView textView = ((ContentViewHolder) holder).textView;
-                    String day = String.valueOf(adapterPosition - mStartOffset + 1);
-                    SpannableString spannable = new SpannableString(day);
+                    int dayIndex = adapterPosition - mStartOffset;
+                    String dayString = String.valueOf(dayIndex + 1);
+                    SpannableString spannable = new SpannableString(dayString);
                     if (mSelectedPosition == adapterPosition) {
                         spannable.setSpan(new CircleSpan(textView.getContext()), 0,
-                                day.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                dayString.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                     }
                     textView.setText(spannable, TextView.BufferType.SPANNABLE);
                     textView.setOnClickListener(new OnClickListener() {
@@ -181,9 +184,9 @@ class MonthView extends RecyclerView {
             return mDays;
         }
 
-        void setSelectedDay(@Nullable CalendarDate selectedDay) {
-            setSelectedPosition(selectedDay == null ? -1 :
-                    mStartOffset + selectedDay.get(Calendar.DAY_OF_MONTH) - 1, false);
+        void setSelectedDay(long dayMillis) {
+            setSelectedPosition(CalendarUtils.isNotTime(dayMillis) ? -1 :
+                    mStartOffset + CalendarUtils.dayOfMonth(dayMillis) - 1, false);
         }
 
         private void setSelectedPosition(int position, boolean notifyObservers) {
@@ -196,8 +199,10 @@ class MonthView extends RecyclerView {
                 notifyItemChanged(last);
             }
             if (position >= 0) {
+                long timeMillis = mBaseTimeMillis + (mSelectedPosition - mStartOffset) *
+                        DateUtils.DAY_IN_MILLIS;
                 notifyItemChanged(position, notifyObservers ?
-                        new SelectionPayload(mSelectedPosition - mStartOffset + 1) : null);
+                        new SelectionPayload(timeMillis) : null);
             }
         }
     }
@@ -230,10 +235,10 @@ class MonthView extends RecyclerView {
     }
 
     static class SelectionPayload {
-        final int dayOfMonth;
+        final long timeMillis;
 
-        public SelectionPayload(int dayOfMonth) {
-            this.dayOfMonth = dayOfMonth;
+        public SelectionPayload(long timeMillis) {
+            this.timeMillis = timeMillis;
         }
     }
 }

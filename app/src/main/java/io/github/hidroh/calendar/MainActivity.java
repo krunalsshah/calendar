@@ -35,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
             CalendarContract.Events.CALENDAR_ID,
             CalendarContract.Events.DTSTART,
             CalendarContract.Events.DTEND,
+            CalendarContract.Events.ALL_DAY,
             CalendarContract.Events.TITLE
     };
 
@@ -160,21 +161,21 @@ public class MainActivity extends AppCompatActivity {
         private final EventCalendarView.OnChangeListener mCalendarListener
                 = new EventCalendarView.OnChangeListener() {
             @Override
-            public void onSelectedDayChange(@NonNull CalendarDate calendarDate) {
+            public void onSelectedDayChange(long calendarDate) {
                 sync(calendarDate, mCalendarView);
             }
         };
         private final AgendaView.OnDateChangeListener mAgendaListener
                 = new AgendaView.OnDateChangeListener() {
             @Override
-            public void onSelectedDayChange(@NonNull CalendarDate calendarDate) {
-                sync(calendarDate, mAgendaView);
+            public void onSelectedDayChange(long dayMillis) {
+                sync(dayMillis, mAgendaView);
             }
         };
         private TextView mTextView;
         private EventCalendarView mCalendarView;
         private AgendaView mAgendaView;
-        private CalendarDate mSelectedDate;
+        private long mSelectedDayMillis = CalendarUtils.NO_TIME_MILLIS;
 
         /**
          * Set up widgets to be synchronized
@@ -194,49 +195,48 @@ public class MainActivity extends AppCompatActivity {
             mTextView = textView;
             mCalendarView = calendarView;
             mAgendaView = agendaView;
-            if (mSelectedDate == null) {
-                mSelectedDate = CalendarDate.today();
+            if (mSelectedDayMillis < 0) {
+                mSelectedDayMillis = CalendarUtils.today();
             }
-            mCalendarView.setSelectedDay(mSelectedDate);
-            agendaView.setSelectedDay(mSelectedDate);
-            updateTitle(mSelectedDate);
+            mCalendarView.setSelectedDay(mSelectedDayMillis);
+            agendaView.setSelectedDay(mSelectedDayMillis);
+            updateTitle(mSelectedDayMillis);
             calendarView.setOnChangeListener(mCalendarListener);
             agendaView.setOnDateChangeListener(mAgendaListener);
         }
 
         void saveState(Bundle outState) {
-            outState.putLong(STATE_SELECTED_DATE, mSelectedDate != null ?
-                    mSelectedDate.getTimeInMillis() : -1);
+            outState.putLong(STATE_SELECTED_DATE, mSelectedDayMillis);
         }
 
         void restoreState(Bundle savedState) {
-            mSelectedDate = CalendarDate.fromTime(savedState.getLong(STATE_SELECTED_DATE, -1));
+            mSelectedDayMillis = savedState.getLong(STATE_SELECTED_DATE,
+                    CalendarUtils.NO_TIME_MILLIS);
         }
 
-        private void sync(@NonNull CalendarDate calendarDate, View originator) {
-            mSelectedDate = calendarDate;
+        private void sync(long dayMillis, View originator) {
+            mSelectedDayMillis = dayMillis;
             if (originator != mCalendarView) {
-                mCalendarView.setSelectedDay(calendarDate);
+                mCalendarView.setSelectedDay(dayMillis);
             }
             if (originator != mAgendaView) {
-                mAgendaView.setSelectedDay(calendarDate);
+                mAgendaView.setSelectedDay(dayMillis);
             }
-            updateTitle(calendarDate);
+            updateTitle(dayMillis);
         }
 
-        private void updateTitle(CalendarDate calendarDate) {
-            mTextView.setText(CalendarUtils.toMonthString(mTextView.getContext(),
-                    calendarDate.getTimeInMillis()));
+        private void updateTitle(long dayMillis) {
+            mTextView.setText(CalendarUtils.toMonthString(mTextView.getContext(), dayMillis));
         }
     }
 
     static class AgendaCursorAdapter extends AgendaAdapter {
 
-        private final CalendarQueryHandler mHandler;
+        private final DayEventsQueryHandler mHandler;
 
         public AgendaCursorAdapter(Context context) {
             super(context);
-            mHandler = new CalendarQueryHandler(context.getContentResolver(), this);
+            mHandler = new DayEventsQueryHandler(context.getContentResolver(), this);
         }
 
         @Override
@@ -246,7 +246,34 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected void loadEvents(long timeMillis) {
-            mHandler.startQuery(0, timeMillis,
+            mHandler.startQuery(timeMillis, timeMillis + DateUtils.DAY_IN_MILLIS);
+        }
+    }
+
+    static class DayEventsQueryHandler extends EventsQueryHandler {
+
+        private final AgendaCursorAdapter mAgendaCursorAdapter;
+
+        public DayEventsQueryHandler(ContentResolver cr, AgendaCursorAdapter agendaCursorAdapter) {
+            super(cr);
+            mAgendaCursorAdapter = agendaCursorAdapter;
+        }
+
+        @Override
+        protected void onQueryComplete(int token, Object cookie, Cursor cursor) {
+            mAgendaCursorAdapter.bindEvents((Long) cookie, cursor);
+        }
+    }
+
+
+    static abstract class EventsQueryHandler extends AsyncQueryHandler {
+
+        public EventsQueryHandler(ContentResolver cr) {
+            super(cr);
+        }
+
+        protected final void startQuery(long startTimeMillis, long endTimeMillis) {
+            startQuery(0, startTimeMillis,
                     CalendarContract.Events.CONTENT_URI,
                     EVENTS_PROJECTION,
                     "(" + CalendarContract.Events.DTSTART + ">=? AND " +
@@ -255,28 +282,13 @@ public class MainActivity extends AppCompatActivity {
                             CalendarContract.Events.DTEND + ">=?) AND " +
                             CalendarContract.Events.DELETED + "=?",
                     new String[]{
-                            String.valueOf(timeMillis),
-                            String.valueOf(timeMillis + DateUtils.DAY_IN_MILLIS),
-                            String.valueOf(timeMillis),
-                            String.valueOf(timeMillis + DateUtils.DAY_IN_MILLIS),
+                            String.valueOf(startTimeMillis),
+                            String.valueOf(endTimeMillis),
+                            String.valueOf(startTimeMillis),
+                            String.valueOf(endTimeMillis),
                             "0"
                     },
                     CalendarContract.Events.DTSTART + " ASC");
-        }
-    }
-
-    static class CalendarQueryHandler extends AsyncQueryHandler {
-
-        private final AgendaCursorAdapter mAgendaCursorAdapter;
-
-        public CalendarQueryHandler(ContentResolver cr, AgendaCursorAdapter agendaCursorAdapter) {
-            super(cr);
-            mAgendaCursorAdapter = agendaCursorAdapter;
-        }
-
-        @Override
-        protected void onQueryComplete(int token, Object cookie, Cursor cursor) {
-            mAgendaCursorAdapter.bindEvents((Long) cookie, cursor);
         }
     }
 }

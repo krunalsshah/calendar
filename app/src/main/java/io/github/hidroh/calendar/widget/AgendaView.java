@@ -7,7 +7,6 @@ import android.graphics.PointF;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Parcelable;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.LinearLayoutManager;
@@ -16,7 +15,7 @@ import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.view.View;
 
-import io.github.hidroh.calendar.CalendarDate;
+import io.github.hidroh.calendar.CalendarUtils;
 import io.github.hidroh.calendar.R;
 
 public class AgendaView extends RecyclerView {
@@ -25,10 +24,9 @@ public class AgendaView extends RecyclerView {
 
     private OnDateChangeListener mListener;
     private AgendaAdapter mAdapter;
-    private final CalendarDate mSelectedDate = CalendarDate.today();
     // represent top scroll position to be set programmatically
-    private int mPendingScrollPosition = NO_POSITION;
-    private long mPrevTimeMillis = -1;
+    private int mPendingScrollPosition = NO_POSITION; // TODO change to 0
+    private long mPrevTimeMillis = CalendarUtils.NO_TIME_MILLIS;
     private Bundle mAdapterSavedState;
 
     /**
@@ -37,9 +35,9 @@ public class AgendaView extends RecyclerView {
     public interface OnDateChangeListener {
         /**
          * Fired when active (top) date has been changed via UI interaction
-         * @param calendarDate  calendar object representing new active (top) day
+         * @param dayMillis  new active (top) day in milliseconds
          */
-        void onSelectedDayChange(@NonNull CalendarDate calendarDate);
+        void onSelectedDayChange(long dayMillis);
     }
 
     public AgendaView(Context context) {
@@ -120,13 +118,13 @@ public class AgendaView extends RecyclerView {
 
     /**
      * Sets active (top) date to be displayed
-     * @param calendarDate  calendar object representing new active (top) date
+     * @param dayMillis  new active (top) date in milliseconds
      */
-    public void setSelectedDay(@NonNull CalendarDate calendarDate) {
+    public void setSelectedDay(long dayMillis) {
         if (mAdapter == null) {
             return;
         }
-        mPendingScrollPosition = mAdapter.getPosition(getContext(), calendarDate.getTimeInMillis());
+        mPendingScrollPosition = mAdapter.getPosition(getContext(), dayMillis);
         if (mPendingScrollPosition >= 0) {
             // lock binding to prevent loading events that might offset scroll position
             mAdapter.lockBinding();
@@ -169,10 +167,9 @@ public class AgendaView extends RecyclerView {
         long timeMillis = mAdapter.getAdapterItem(position).mTimeMillis;
         if (mPrevTimeMillis != timeMillis) {
             mPrevTimeMillis = timeMillis;
-            mSelectedDate.setTimeInMillis(timeMillis);
             // only notify listener if scroll is not triggered programmatically (i.e. no pending)
             if (mPendingScrollPosition == NO_POSITION && mListener != null) {
-                mListener.onSelectedDayChange(mSelectedDate);
+                mListener.onSelectedDayChange(timeMillis);
             }
         }
     }

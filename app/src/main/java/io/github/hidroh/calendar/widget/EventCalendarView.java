@@ -3,7 +3,6 @@ package io.github.hidroh.calendar.widget;
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Parcelable;
-import android.support.annotation.NonNull;
 import android.support.annotation.VisibleForTesting;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
@@ -12,10 +11,9 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 
-import io.github.hidroh.calendar.CalendarDate;
+import io.github.hidroh.calendar.CalendarUtils;
 
 /**
  * A custom CalendarDate View, in the form of circular {@link ViewPager}
@@ -29,10 +27,10 @@ public class EventCalendarView extends ViewPager {
     private final MonthView.OnDateChangeListener mDateChangeListener =
             new MonthView.OnDateChangeListener() {
                 @Override
-                public void onSelectedDayChange(@NonNull CalendarDate calendarDate) {
+                public void onSelectedDayChange(long dayMillis) {
                     // this should come from a page, only notify its neighbors
-                    mAdapter.setSelectedDay(getCurrentItem(), calendarDate, false);
-                    notifyDayChange(calendarDate);
+                    mAdapter.setSelectedDay(getCurrentItem(), dayMillis, false);
+                    notifyDayChange(dayMillis);
                 }
             };
     private final MonthViewPagerAdapter mAdapter = new MonthViewPagerAdapter(mDateChangeListener);
@@ -44,9 +42,9 @@ public class EventCalendarView extends ViewPager {
     public interface OnChangeListener {
         /**
          * Fired when selected day has been changed via UI interaction
-         * @param calendar    calendar object that represents selected day
+         * @param dayMillis    selected day in milliseconds
          */
-        void onSelectedDayChange(@NonNull CalendarDate calendar);
+        void onSelectedDayChange(long dayMillis);
     }
 
     public EventCalendarView(Context context) {
@@ -82,24 +80,25 @@ public class EventCalendarView extends ViewPager {
      * Sets selected day, automatically move to next/previous month
      * if given day is not within active month
      * TODO assume that min left month < selectedDay < max right month
-     * @param selectedDay   new selected day
+     * @param dayMillis   new selected day in milliseconds
      */
-    public void setSelectedDay(@NonNull CalendarDate selectedDay) {
+    public void setSelectedDay(long dayMillis) {
         // notify active page and its neighbors
         int position = getCurrentItem();
-        if (selectedDay.monthBefore(mAdapter.mSelectedDay)) {
-            mAdapter.setSelectedDay(position - 1, selectedDay, true);
+        if (CalendarUtils.monthBefore(dayMillis, mAdapter.mSelectedDayMillis)) {
+            mAdapter.setSelectedDay(position - 1, dayMillis, true);
             setCurrentItem(position - 1, true);
-        } else if (selectedDay.monthAfter(mAdapter.mSelectedDay)) {
-            mAdapter.setSelectedDay(position + 1, selectedDay, true);
+        } else if (CalendarUtils.monthAfter(dayMillis, mAdapter.mSelectedDayMillis)) {
+            mAdapter.setSelectedDay(position + 1, dayMillis, true);
             setCurrentItem(position + 1, true);
         } else {
-            mAdapter.setSelectedDay(position, selectedDay, true);
+            mAdapter.setSelectedDay(position, dayMillis, true);
         }
     }
 
     private void init() {
         setAdapter(mAdapter);
+        setCurrentItem(mAdapter.getCount() / 2);
         addOnPageChangeListener(new SimpleOnPageChangeListener() {
             public boolean mDragging = false; // indicate if page change is from user
 
@@ -109,7 +108,7 @@ public class EventCalendarView extends ViewPager {
                     // sequence: IDLE -> (DRAGGING) -> SETTLING -> onPageSelected -> IDLE
                     // ensures that this will always be triggered before syncPages() for position
                     toFirstDay(position);
-                    notifyDayChange(mAdapter.getCalendar(position));
+                    notifyDayChange(mAdapter.getMonth(position));
                 }
                 mDragging = false;
                 // trigger same scroll state changed logic, which would not be fired if not visible
@@ -127,18 +126,15 @@ public class EventCalendarView extends ViewPager {
                 }
             }
         });
-        setCurrentItem(mAdapter.getCount() / 2);
     }
 
     private void toFirstDay(int position) {
-        CalendarDate calendar = mAdapter.getCalendar(position);
-        calendar.set(Calendar.DAY_OF_MONTH, 1);
-        mAdapter.setSelectedDay(position, calendar, true);
+        mAdapter.setSelectedDay(position, CalendarUtils.monthFirstDay(mAdapter.getMonth(position)), true);
     }
 
-    private void notifyDayChange(@NonNull CalendarDate calendarDate) {
+    private void notifyDayChange(long dayMillis) {
         if (mListener != null) {
-            mListener.onSelectedDayChange(calendarDate);
+            mListener.onSelectedDayChange(dayMillis);
         }
     }
 
@@ -175,25 +171,21 @@ public class EventCalendarView extends ViewPager {
      * @see #shiftRight()
      */
     static class MonthViewPagerAdapter extends PagerAdapter {
-        private static final String STATE_MONTH = "state:month";
-        private static final String STATE_YEAR = "state:year";
-        private static final String STATE_SELECTED_YEAR = "state:selectedYear";
-        private static final String STATE_SELECTED_MONTH = "state:selectedMonth";
-        private static final String STATE_SELECTED_DAY = "state:selectedDay";
+        private static final String STATE_FIRST_MONTH_MILLIS = "state:month";
+        private static final String STATE_SELECTED_DAY_MILLIS = "state:selectedDay";
         static final int ITEM_COUNT = 5; // buffer, left, active, right, buffer
 
         @VisibleForTesting final List<MonthView> mViews = new ArrayList<>(getCount());
-        @VisibleForTesting final CalendarDate mSelectedDay = CalendarDate.today();
-        private final List<CalendarDate> mCalendars = new ArrayList<>(getCount());
+        @VisibleForTesting long mSelectedDayMillis = CalendarUtils.today();
+        private final List<Long> mMonths = new ArrayList<>(getCount());
         private final MonthView.OnDateChangeListener mListener;
 
         public MonthViewPagerAdapter(MonthView.OnDateChangeListener listener) {
             mListener = listener;
             int mid = ITEM_COUNT / 2;
+            long todayMillis = CalendarUtils.monthFirstDay(CalendarUtils.today());
             for (int i = 0; i < getCount(); i++) {
-                CalendarDate calendar = CalendarDate.today();
-                calendar.add(Calendar.MONTH, i - mid);
-                mCalendars.add(calendar);
+                mMonths.add(CalendarUtils.addMonths(todayMillis, i - mid));
                 mViews.add(null);
             }
         }
@@ -228,11 +220,8 @@ public class EventCalendarView extends ViewPager {
         @Override
         public Parcelable saveState() {
             Bundle bundle = new Bundle();
-            bundle.putInt(STATE_MONTH, mCalendars.get(0).get(Calendar.MONTH));
-            bundle.putInt(STATE_YEAR, mCalendars.get(0).get(Calendar.YEAR));
-            bundle.putInt(STATE_SELECTED_YEAR, mSelectedDay.get(Calendar.YEAR));
-            bundle.putInt(STATE_SELECTED_MONTH, mSelectedDay.get(Calendar.MONTH));
-            bundle.putInt(STATE_SELECTED_DAY, mSelectedDay.get(Calendar.DAY_OF_MONTH));
+            bundle.putLong(STATE_FIRST_MONTH_MILLIS, mMonths.get(0));
+            bundle.putLong(STATE_SELECTED_DAY_MILLIS, mSelectedDayMillis);
             return bundle;
         }
 
@@ -242,30 +231,22 @@ public class EventCalendarView extends ViewPager {
             if (savedState == null) {
                 return;
             }
-            int month = savedState.getInt(STATE_MONTH),
-                    year = savedState.getInt(STATE_YEAR),
-                    selectedYear = savedState.getInt(STATE_SELECTED_YEAR),
-                    selectedMonth = savedState.getInt(STATE_SELECTED_MONTH),
-                    selectedDay = savedState.getInt(STATE_SELECTED_DAY);
-            mSelectedDay.set(selectedYear, selectedMonth, selectedDay);
+            mSelectedDayMillis = savedState.getLong(STATE_SELECTED_DAY_MILLIS);
+            long firstMonthMillis = savedState.getInt(STATE_FIRST_MONTH_MILLIS);
             for (int i = 0; i < getCount(); i++) {
-                CalendarDate calendar = CalendarDate.today();
-                calendar.set(year, month, 1);
-                calendar.add(Calendar.MONTH, i);
-                mCalendars.set(i, calendar);
+                mMonths.set(i, CalendarUtils.addMonths(firstMonthMillis, i));
             }
         }
 
         /**
          * Sets selected day for page at given position, which either sets new selected day
          * if it falls within that month, or unsets previously selected day if any
-         * @param position       page position
-         * @param selectedDay    selected day
-         * @param notifySelf     true to rebind page at given position, false otherwise
+         * @param position      page position
+         * @param dayMillis     selected day in milliseconds
+         * @param notifySelf    true to rebind page at given position, false otherwise
          */
-        void setSelectedDay(int position, @NonNull CalendarDate selectedDay, boolean notifySelf) {
-            mSelectedDay.set(selectedDay.get(Calendar.YEAR), selectedDay.get(Calendar.MONTH),
-                    selectedDay.get(Calendar.DAY_OF_MONTH));
+        void setSelectedDay(int position, long dayMillis, boolean notifySelf) {
+            mSelectedDayMillis = dayMillis;
             if (notifySelf) {
                 bindSelectedDay(position);
             }
@@ -277,8 +258,8 @@ public class EventCalendarView extends ViewPager {
             }
         }
 
-        CalendarDate getCalendar(int position) {
-            return mCalendars.get(position);
+        long getMonth(int position) {
+            return mMonths.get(position);
         }
 
         /**
@@ -287,9 +268,7 @@ public class EventCalendarView extends ViewPager {
          */
         void shiftLeft() {
             for (int i = 0; i < getCount() - 2; i++) {
-                CalendarDate first = mCalendars.remove(0);
-                first.add(Calendar.MONTH, getCount());
-                mCalendars.add(first);
+                mMonths.add(CalendarUtils.addMonths(mMonths.remove(0), getCount()));
             }
             // rebind current item (2nd) and 2 adjacent items
             for (int i = 0; i <= 2; i++) {
@@ -303,9 +282,7 @@ public class EventCalendarView extends ViewPager {
          */
         void shiftRight() {
             for (int i = 0; i < getCount() - 2; i++) {
-                CalendarDate last = mCalendars.remove(getCount() - 1);
-                last.add(Calendar.MONTH, -getCount());
-                mCalendars.add(0, last);
+                mMonths.add(0, CalendarUtils.addMonths(mMonths.remove(getCount() - 1), -getCount()));
             }
             // rebind current item (2nd to last) and 2 adjacent items
             for (int i = 0; i <= 2; i++) {
@@ -315,14 +292,14 @@ public class EventCalendarView extends ViewPager {
 
         void bind(int position) {
             if (mViews.get(position) != null) {
-                mViews.get(position).setCalendar(mCalendars.get(position));
+                mViews.get(position).setCalendar(mMonths.get(position));
             }
             bindSelectedDay(position);
         }
 
         private void bindSelectedDay(int position) {
             if (mViews.get(position) != null) {
-                mViews.get(position).setSelectedDay(mSelectedDay);
+                mViews.get(position).setSelectedDay(mSelectedDayMillis);
             }
         }
     }

@@ -3,6 +3,7 @@ package io.github.hidroh.calendar.widget;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.text.format.DateUtils;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
@@ -17,15 +18,12 @@ import org.robolectric.annotation.Config;
 import org.robolectric.internal.ShadowExtractor;
 import org.robolectric.util.ActivityController;
 
-import java.util.Calendar;
-
-import io.github.hidroh.calendar.CalendarDate;
+import io.github.hidroh.calendar.CalendarUtils;
 import io.github.hidroh.calendar.R;
 import io.github.hidroh.calendar.test.shadows.ShadowViewPager;
 
-import static io.github.hidroh.calendar.test.assertions.CalendarAssert.assertThat;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static io.github.hidroh.calendar.test.assertions.DayTimeAssert.assertThat;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -36,7 +34,7 @@ public class EventCalendarViewTest {
     private ActivityController<TestActivity> controller;
     private EventCalendarView calendarView;
     private ShadowViewPager shadowCalendarView;
-    private final CalendarDate nowCalendar = CalendarDate.today();
+    private long todayMillis = CalendarUtils.today();
 
     @Before
     public void setUp() {
@@ -51,126 +49,121 @@ public class EventCalendarViewTest {
         // initial state: 1 active, 2 hidden and 2 uninitialized
         Assertions.assertThat(calendarView).hasChildCount(3);
         Assertions.assertThat(calendarView.getChildAt(0)).isInstanceOf(MonthView.class);
-        assertThat(getCalendarAt(2))
-                .isInSameMonthAs(nowCalendar)
-                .isMonthsAfter(getCalendarAt(1), 1)
-                .isMonthsBefore(getCalendarAt(3), 1);
+        assertThat(getMonthAt(2))
+                .isInSameMonthAs(todayMillis)
+                .isMonthsAfter(getMonthAt(1), 1)
+                .isMonthsBefore(getMonthAt(3), 1);
     }
 
     @Test
     public void testSwipeLeftChangeMonth() {
         // initial state
-        Calendar expectedCalendar = Calendar.getInstance();
+        long expected = CalendarUtils.today();
         int actual = calendarView.getCurrentItem();
         assertThat(actual).isEqualTo(2);
-        assertThat(getCalendarAt(actual))
-                .isInSameMonthAs(expectedCalendar);
+        assertThat(getMonthAt(actual))
+                .isInSameMonthAs(expected);
 
         // swipe left, no shifting
         // changing month by swiping should automatically set selected day to 1st day
-        expectedCalendar.add(Calendar.MONTH, 1);
+        expected = CalendarUtils.addMonths(expected, 1);
         shadowCalendarView.swipeLeft();
         actual = calendarView.getCurrentItem();
         assertThat(actual).isEqualTo(3);
-        assertThat(getCalendarAt(actual))
-                .isInSameMonthAs(expectedCalendar)
-                .isMonthsBefore(getCalendarAt(actual + 1), 1)
-                .isMonthsAfter(getCalendarAt(actual - 1), 1)
-                .isFirstDayOf(expectedCalendar);
+        assertThat(getMonthAt(actual))
+                .isInSameMonthAs(expected)
+                .isMonthsBefore(getMonthAt(actual + 1), 1)
+                .isMonthsAfter(getMonthAt(actual - 1), 1)
+                .isFirstDayOf(expected);
 
         // swipe left, reach the end, should shift left to front
-        expectedCalendar.add(Calendar.MONTH, 1);
+        expected = CalendarUtils.addMonths(expected, 1);
         shadowCalendarView.swipeLeft();
         actual = calendarView.getCurrentItem();
         assertThat(actual).isEqualTo(1);
-        assertThat(getCalendarAt(actual))
-                .isInSameMonthAs(expectedCalendar)
-                .isMonthsBefore(getCalendarAt(actual + 1), 1)
-                .isMonthsAfter(getCalendarAt(actual - 1), 1);
+        assertThat(getMonthAt(actual))
+                .isInSameMonthAs(expected)
+                .isMonthsBefore(getMonthAt(actual + 1), 1)
+                .isMonthsAfter(getMonthAt(actual - 1), 1);
     }
 
     @Test
     public void testSwipeRightChangeMonth() {
         // initial state
-        Calendar expectedCalendar = Calendar.getInstance();
+        long expected = CalendarUtils.today();
         int actual = calendarView.getCurrentItem();
         assertThat(actual).isEqualTo(2);
-        assertThat(getCalendarAt(actual))
-                .isInSameMonthAs(expectedCalendar);
+        assertThat(getMonthAt(actual))
+                .isInSameMonthAs(expected);
 
         // swipe right, no shifting
         // changing month by swiping should automatically set selected day to 1st day
-        expectedCalendar.add(Calendar.MONTH, -1);
+        expected = CalendarUtils.addMonths(expected, -1);
         shadowCalendarView.swipeRight();
         actual = calendarView.getCurrentItem();
         assertThat(actual).isEqualTo(1);
-        assertThat(getCalendarAt(actual))
-                .isInSameMonthAs(expectedCalendar)
-                .isMonthsBefore(getCalendarAt(actual + 1), 1)
-                .isMonthsAfter(getCalendarAt(actual - 1), 1)
-                .isFirstDayOf(expectedCalendar);
+        assertThat(getMonthAt(actual))
+                .isInSameMonthAs(expected)
+                .isMonthsBefore(getMonthAt(actual + 1), 1)
+                .isMonthsAfter(getMonthAt(actual - 1), 1)
+                .isFirstDayOf(expected);
 
         // swipe right, reach the end, should shift right to end
-        expectedCalendar.add(Calendar.MONTH, -1);
+        expected = CalendarUtils.addMonths(expected, -1);
         shadowCalendarView.swipeRight();
         actual = calendarView.getCurrentItem();
         assertThat(actual).isEqualTo(3);
-        assertThat(getCalendarAt(actual))
-                .isInSameMonthAs(expectedCalendar)
-                .isMonthsBefore(getCalendarAt(actual + 1), 1)
-                .isMonthsAfter(getCalendarAt(actual - 1), 1);
+        assertThat(getMonthAt(actual))
+                .isInSameMonthAs(expected)
+                .isMonthsBefore(getMonthAt(actual + 1), 1)
+                .isMonthsAfter(getMonthAt(actual - 1), 1);
     }
 
     @Test
     public void testChangeActiveMonthSelectedDay() {
-        CalendarDate thisMonth = CalendarDate.fromTime(nowCalendar.getTimeInMillis());
+        // setting day in same month should not change page
+        long firstDay = CalendarUtils.monthFirstDay(todayMillis);
+        calendarView.setSelectedDay(firstDay);
+        assertThat(getMonthAt(calendarView.getCurrentItem()))
+                .isInSameMonthAs(todayMillis);
 
         // setting day in same month should not change page
-        thisMonth.set(Calendar.DAY_OF_MONTH, 1);
-        calendarView.setSelectedDay(thisMonth);
-        assertThat(getCalendarAt(calendarView.getCurrentItem()))
-                .isInSameMonthAs(thisMonth);
+        long lastDay = CalendarUtils.monthLastDay(todayMillis);
+        calendarView.setSelectedDay(lastDay);
+        assertThat(getMonthAt(calendarView.getCurrentItem()))
+                .isInSameMonthAs(todayMillis);
 
         // setting day in same month should not change page
-        thisMonth.set(Calendar.DAY_OF_MONTH, thisMonth.getActualMaximum(Calendar.DAY_OF_MONTH));
-        calendarView.setSelectedDay(thisMonth);
-        assertThat(getCalendarAt(calendarView.getCurrentItem()))
-                .isInSameMonthAs(thisMonth);
-
-
-        // setting day in same month should not change page
-        thisMonth.set(Calendar.DAY_OF_MONTH, 15);
-        calendarView.setSelectedDay(thisMonth);
-        assertThat(getCalendarAt(calendarView.getCurrentItem()))
-                .isInSameMonthAs(thisMonth);
+        long middleDay = firstDay + DateUtils.DAY_IN_MILLIS * 15;
+        calendarView.setSelectedDay(middleDay);
+        assertThat(getMonthAt(calendarView.getCurrentItem()))
+                .isInSameMonthAs(todayMillis);
     }
 
     @Test
     public void testChangeSelectedDayToPreviousMonth() {
-        CalendarDate prevMonth = CalendarDate.fromTime(nowCalendar.getTimeInMillis());
-        prevMonth.add(Calendar.MONTH, -1);
-        prevMonth.set(Calendar.DAY_OF_MONTH, 15);
+        long middleDayPrevMonth = CalendarUtils.addMonths(
+                CalendarUtils.monthFirstDay(todayMillis), -1) + DateUtils.DAY_IN_MILLIS * 15;
 
         // setting day in previous month should swipe to left page
         // changing month programmatically should NOT automatically set selected day to 1st day
-        calendarView.setSelectedDay(prevMonth);
+        calendarView.setSelectedDay(middleDayPrevMonth);
         assertThat(getSelectedDay())
-                .isInSameMonthAs(prevMonth)
-                .isNotFirstDayOf(prevMonth);
+                .isInSameMonthAs(middleDayPrevMonth)
+                .isNotFirstDayOf(middleDayPrevMonth);
     }
 
     @Test
     public void testChangeSelectedDayToNextMonth() {
-        CalendarDate nextMonth = CalendarDate.fromTime(nowCalendar.getTimeInMillis());
-        nextMonth.add(Calendar.MONTH, 1);
-        nextMonth.set(Calendar.DAY_OF_MONTH, 15);
+        long middleDayNextMonth = CalendarUtils.addMonths(
+                CalendarUtils.monthFirstDay(todayMillis), 1) + DateUtils.DAY_IN_MILLIS * 15;
 
         // setting day in next month should swipe to right page
         // changing month programmatically should NOT automatically set selected day to 1st day
-        calendarView.setSelectedDay(nextMonth);
+        calendarView.setSelectedDay(middleDayNextMonth);
         assertThat(getSelectedDay())
-                .isInSameMonthAs(nextMonth)
-                .isNotFirstDayOf(nextMonth);
+                .isInSameMonthAs(middleDayNextMonth)
+                .isNotFirstDayOf(middleDayNextMonth);
     }
 
     @Test
@@ -180,11 +173,11 @@ public class EventCalendarViewTest {
 
         // swiping to change page, should generate notification
         shadowCalendarView.swipeLeft();
-        verify(listener).onSelectedDayChange(any(CalendarDate.class));
+        verify(listener).onSelectedDayChange(anyLong());
 
         // changing month programmatically, should not generate notification
-        calendarView.setSelectedDay(nowCalendar);
-        verify(listener).onSelectedDayChange(any(CalendarDate.class));
+        calendarView.setSelectedDay(todayMillis);
+        verify(listener).onSelectedDayChange(anyLong());
 
         // TODO test changing day from month view, should generate notification
     }
@@ -194,13 +187,13 @@ public class EventCalendarViewTest {
         controller.pause().stop().destroy();
     }
 
-    private CalendarDate getCalendarAt(int position) {
+    private long getMonthAt(int position) {
         return ((EventCalendarView.MonthViewPagerAdapter) calendarView.getAdapter())
-                .mViews.get(position).mCalendarDate;
+                .mViews.get(position).mMonthMillis;
     }
 
-    private CalendarDate getSelectedDay() {
-        return ((EventCalendarView.MonthViewPagerAdapter) calendarView.getAdapter()).mSelectedDay;
+    private long getSelectedDay() {
+        return ((EventCalendarView.MonthViewPagerAdapter) calendarView.getAdapter()).mSelectedDayMillis;
     }
 
     static class TestActivity extends AppCompatActivity {

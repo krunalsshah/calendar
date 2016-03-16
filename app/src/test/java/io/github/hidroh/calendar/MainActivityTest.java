@@ -25,7 +25,6 @@ import org.robolectric.shadows.ShadowApplication;
 import org.robolectric.util.ActivityController;
 
 import java.util.Arrays;
-import java.util.Calendar;
 
 import io.github.hidroh.calendar.test.shadows.ShadowLinearLayoutManager;
 import io.github.hidroh.calendar.test.shadows.ShadowRecyclerView;
@@ -62,7 +61,7 @@ public class MainActivityTest {
         // initial state
         assertToggleOff();
         assertThat(toggle).hasTextString(CalendarUtils.toMonthString(activity,
-                CalendarDate.today().getTimeInMillis()));
+                CalendarUtils.today()));
 
         // toggle on
         toggle.performClick();
@@ -75,13 +74,12 @@ public class MainActivityTest {
 
     @Test
     public void testCalendarViewDayChange() {
-        CalendarDate firstDayNextMonth = CalendarDate.today();
-        firstDayNextMonth.add(Calendar.MONTH, 1);
-        firstDayNextMonth.set(Calendar.DAY_OF_MONTH, 1);
+        long firstDayNextMonth = CalendarUtils.addMonths(CalendarUtils.monthFirstDay(
+                CalendarUtils.today()), 1);
 
         // initial state
-        assertTitle(CalendarDate.today());
-        assertAgendaViewTopDay(CalendarDate.today());
+        assertTitle(CalendarUtils.today());
+        assertAgendaViewTopDay(CalendarUtils.today());
 
         // swipe calendar view left, should update title and scroll agenda view
         ((ShadowViewPager) ShadowExtractor.extract(calendarView)).swipeLeft();
@@ -91,12 +89,11 @@ public class MainActivityTest {
 
     @Test
     public void testAgendaViewDayChange() {
-        CalendarDate prevMonth = CalendarDate.today();
-        prevMonth.add(Calendar.MONTH, -1);
+        long prevMonth = CalendarUtils.addMonths(CalendarUtils.today(), -1);
 
         // initial state
         int initialCalendarPage = calendarView.getCurrentItem();
-        assertTitle(CalendarDate.today());
+        assertTitle(CalendarUtils.today());
 
         // scroll agenda view to top, should update title and swipe calendar view right
         agendaView.smoothScrollToPosition(0);
@@ -136,7 +133,7 @@ public class MainActivityTest {
     public void testQueryCalendarProvider() {
         RoboCursor cursor = new TestRoboCursor();
         cursor.setResults(new Object[][]{
-                new Object[]{"Event 1", CalendarDate.today().getTimeInMillis()}
+                new Object[]{"Event 1", CalendarUtils.today()}
         });
         shadowOf(ShadowApplication.getInstance().getContentResolver())
                 .setCursor(CalendarContract.Events.CONTENT_URI, cursor);
@@ -158,12 +155,12 @@ public class MainActivityTest {
         controller.pause().stop().destroy();
     }
 
-    private void assertTitle(CalendarDate calendarDate) {
+    private void assertTitle(long dayMillis) {
         assertThat(toggle).hasTextString(CalendarUtils.toMonthString(activity,
-                calendarDate.getTimeInMillis()));
+                dayMillis));
     }
 
-    private void assertAgendaViewTopDay(CalendarDate topDay) {
+    private void assertAgendaViewTopDay(long topDayMillis) {
         int topPosition = ((LinearLayoutManager) agendaView.getLayoutManager())
                 .findFirstVisibleItemPosition();
         RecyclerView.ViewHolder viewHolder = agendaView.getAdapter()
@@ -171,7 +168,7 @@ public class MainActivityTest {
         agendaView.getAdapter().bindViewHolder(viewHolder, topPosition);
         assertThat((TextView) viewHolder.itemView)
                 .hasTextString(CalendarUtils.toDayString(activity,
-                        topDay.getTimeInMillis()));
+                        topDayMillis));
     }
 
     private void assertToggleOn() {

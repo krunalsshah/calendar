@@ -21,13 +21,13 @@ import org.robolectric.util.ActivityController;
 import java.text.DateFormatSymbols;
 import java.util.Calendar;
 
-import io.github.hidroh.calendar.CalendarDate;
+import io.github.hidroh.calendar.CalendarUtils;
 import io.github.hidroh.calendar.R;
 import io.github.hidroh.calendar.test.shadows.ShadowViewHolder;
 
 import static org.assertj.android.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -46,10 +46,9 @@ public class MonthViewTest {
         controller = Robolectric.buildActivity(TestActivity.class);
         TestActivity activity = controller.create().start().resume().visible().get();
         monthView = (MonthView) activity.findViewById(R.id.calendar_view);
+        //noinspection ConstantConditions
         adapter = monthView.getAdapter();
-        CalendarDate calendar = CalendarDate.today();
-        calendar.set(2016, Calendar.MARCH, 1);
-        monthView.setCalendar(calendar);
+        monthView.setCalendar(createDayMillis(2016, Calendar.MARCH, 1));
         // 7 header cells + 2 carried days from Feb + 31 days in March
         assertThat(adapter.getItemCount()).isEqualTo(7 + 31 + 2);
     }
@@ -82,29 +81,28 @@ public class MonthViewTest {
         monthView.setOnDateChangeListener(listener);
 
         // clear selection
-        monthView.setSelectedDay(null);
-        verify(listener, never()).onSelectedDayChange(any(CalendarDate.class));
+        monthView.setSelectedDay(CalendarUtils.NO_TIME_MILLIS);
+        verify(listener, never()).onSelectedDayChange(anyLong());
 
         // new selection outside current month, not triggered by users
-        CalendarDate selection = CalendarDate.today();
-        selection.set(2016, Calendar.APRIL, 1);
+        long selection = createDayMillis(2016, Calendar.APRIL, 1);
         monthView.setSelectedDay(selection);
-        verify(listener, never()).onSelectedDayChange(any(CalendarDate.class));
+        verify(listener, never()).onSelectedDayChange(anyLong());
 
         // new selection inside current month, not triggered by users
-        selection.set(2016, Calendar.MARCH, 1);
+        selection = createDayMillis(2016, Calendar.MARCH, 1);
         monthView.setSelectedDay(selection);
-        verify(listener, never()).onSelectedDayChange(any(CalendarDate.class));
+        verify(listener, never()).onSelectedDayChange(anyLong());
 
         // change selection via UI interaction, triggered by users
         RecyclerView.ViewHolder viewHolder = createBindViewHolder(10); // 02-March-2016
         viewHolder.itemView.performClick();
-        verify(listener).onSelectedDayChange(any(CalendarDate.class));
+        verify(listener).onSelectedDayChange(anyLong());
 
         // change selection via UI interaction, triggered by users
         viewHolder = createBindViewHolder(11); // 03-March-2016
         viewHolder.itemView.performClick();
-        verify(listener, times(2)).onSelectedDayChange(any(CalendarDate.class));
+        verify(listener, times(2)).onSelectedDayChange(anyLong());
     }
 
     @After
@@ -118,6 +116,12 @@ public class MonthViewTest {
         ((ShadowViewHolder) ShadowExtractor.extract(viewHolder)).adapterPosition = position;
         adapter.bindViewHolder(viewHolder, position);
         return viewHolder;
+    }
+
+    private long createDayMillis(int year, int month, int day) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(year, month, day, 0, 0, 0);
+        return calendar.getTimeInMillis();
     }
 
     static class TestActivity extends AppCompatActivity {

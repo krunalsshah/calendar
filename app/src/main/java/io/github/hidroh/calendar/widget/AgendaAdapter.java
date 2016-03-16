@@ -21,7 +21,6 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import io.github.hidroh.calendar.CalendarDate;
 import io.github.hidroh.calendar.CalendarUtils;
 import io.github.hidroh.calendar.R;
 
@@ -218,7 +217,7 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
     void append(Context context) {
         int count = MONTH_SIZE;
         if (mEventGroups.isEmpty()) {
-            long today = CalendarDate.today().getTimeInMillis();
+            long today = CalendarUtils.today();
             for (int i = 0; i < count; i++) {
                 mEventGroups.add(new EventGroup(context, today + DateUtils.DAY_IN_MILLIS * i));
             }
@@ -253,7 +252,7 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
      */
     void unlockBinding() {
         mLock = false;
-        notifyDataSetChanged();
+        notifyItemRangeChanged(0, getItemCount());
     }
 
     private Pair<EventGroup, Integer> findGroup(long timeMillis) {
