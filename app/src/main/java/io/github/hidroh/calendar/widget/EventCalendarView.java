@@ -1,7 +1,9 @@
 package io.github.hidroh.calendar.widget;
 
 import android.content.Context;
+import android.database.ContentObserver;
 import android.database.Cursor;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.view.ViewPager;
 import android.util.AttributeSet;
@@ -46,10 +48,10 @@ public class EventCalendarView extends ViewPager {
      * Adapter class for loading and binding calendar events asynchronously
      */
     public static abstract class CalendarAdapter {
-        private MonthViewPagerAdapter mPagerAdapter;
+        private EventCalendarView mCalendarView;
 
-        void setPagerAdapter(MonthViewPagerAdapter pagerAdapter) {
-            mPagerAdapter = pagerAdapter;
+        void setCalendarView(EventCalendarView calendarView) {
+            mCalendarView = calendarView;
         }
 
         /**
@@ -67,7 +69,7 @@ public class EventCalendarView extends ViewPager {
          * @param cursor         {@link android.provider.CalendarContract.Events} cursor
          */
         public final void bindEvents(long monthMillis, Cursor cursor) {
-            mPagerAdapter.swapCursor(monthMillis, cursor);
+            mCalendarView.swapCursor(monthMillis, cursor);
         }
     }
 
@@ -129,7 +131,7 @@ public class EventCalendarView extends ViewPager {
      */
     public void setCalendarAdapter(@NonNull CalendarAdapter adapter) {
         mCalendarAdapter = adapter;
-        adapter.setPagerAdapter(mPagerAdapter);
+        mCalendarAdapter.setCalendarView(this);
         loadEvents(getCurrentItem());
     }
 
@@ -174,12 +176,6 @@ public class EventCalendarView extends ViewPager {
         });
     }
 
-    private void loadEvents(int position) {
-        if (mCalendarAdapter != null && mPagerAdapter.getCursor(position) == null) {
-            mCalendarAdapter.loadEvents(mPagerAdapter.getMonth(position));
-        }
-    }
-
     private void toFirstDay(int position) {
         mPagerAdapter.setSelectedDay(position,
                 CalendarUtils.monthFirstDay(mPagerAdapter.getMonth(position)), true);
@@ -211,6 +207,42 @@ public class EventCalendarView extends ViewPager {
             }
             if (position < mPagerAdapter.getCount() - 1) {
                 mPagerAdapter.bind(position + 1);
+            }
+        }
+    }
+
+    private void loadEvents(int position) {
+        if (mCalendarAdapter != null && mPagerAdapter.getCursor(position) == null) {
+            mCalendarAdapter.loadEvents(mPagerAdapter.getMonth(position));
+        }
+    }
+
+    private void swapCursor(long monthMillis, Cursor cursor) {
+        mPagerAdapter.swapCursor(monthMillis, cursor, new PagerContentObserver(monthMillis));
+    }
+
+    class PagerContentObserver extends ContentObserver {
+
+        private final long monthMillis;
+
+        public PagerContentObserver(long monthMillis) {
+            super(new Handler());
+            this.monthMillis = monthMillis;
+        }
+
+        @Override
+        public boolean deliverSelfNotifications() {
+            return true;
+        }
+
+        @Override
+        public void onChange(boolean selfChange) {
+            // invalidate previous cursor for given month
+            mPagerAdapter.swapCursor(monthMillis, null, null);
+            // reload events if given month is active month
+            // hidden months will be reloaded upon being swiped to
+            if (CalendarUtils.sameMonth(monthMillis, mPagerAdapter.getMonth(getCurrentItem()))) {
+                loadEvents(getCurrentItem());
             }
         }
     }
