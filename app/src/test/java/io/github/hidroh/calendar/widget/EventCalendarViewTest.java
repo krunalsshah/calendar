@@ -188,12 +188,12 @@ public class EventCalendarViewTest {
     }
 
     private long getMonthAt(int position) {
-        return ((EventCalendarView.MonthViewPagerAdapter) calendarView.getAdapter())
+        return ((MonthViewPagerAdapter) calendarView.getAdapter())
                 .mViews.get(position).mMonthMillis;
     }
 
     private long getSelectedDay() {
-        return ((EventCalendarView.MonthViewPagerAdapter) calendarView.getAdapter()).mSelectedDayMillis;
+        return ((MonthViewPagerAdapter) calendarView.getAdapter()).mSelectedDayMillis;
     }
 
     static class TestActivity extends AppCompatActivity {

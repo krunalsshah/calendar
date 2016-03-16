@@ -1,13 +1,18 @@
 package io.github.hidroh.calendar.widget;
 
 import android.content.Context;
+import android.database.Cursor;
+import android.provider.CalendarContract;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.format.DateUtils;
+import android.text.style.ForegroundColorSpan;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,6 +21,9 @@ import android.widget.TextView;
 
 import java.text.DateFormatSymbols;
 import java.util.Calendar;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
 import io.github.hidroh.calendar.CalendarUtils;
 import io.github.hidroh.calendar.R;
@@ -27,7 +35,7 @@ import io.github.hidroh.calendar.text.style.CircleSpan;
 class MonthView extends RecyclerView {
     private static final int SPANS_COUNT = 7; // days in week
     @VisibleForTesting long mMonthMillis;
-    private EventAdapter mAdapter;
+    private GridAdapter mAdapter;
     private OnDateChangeListener mListener;
 
     /**
@@ -80,7 +88,7 @@ class MonthView extends RecyclerView {
             return;
         }
         mMonthMillis = monthMillis;
-        mAdapter = new EventAdapter(monthMillis);
+        mAdapter = new GridAdapter(monthMillis);
         mAdapter.registerAdapterDataObserver(new AdapterDataObserver() {
             @Override
             public void onItemRangeChanged(int positionStart, int itemCount, Object payload) {
@@ -112,16 +120,26 @@ class MonthView extends RecyclerView {
         }
     }
 
-    static class EventAdapter extends Adapter<CellViewHolder> {
+    /**
+     * Swaps cursor for calendar events
+     * @param cursor    {@link android.provider.CalendarContract.Events} cursor
+     */
+    void swapCursor(@NonNull Cursor cursor) {
+        mAdapter.swapCursor(cursor);
+    }
+
+    static class GridAdapter extends Adapter<CellViewHolder> {
         private static final int VIEW_TYPE_HEADER = 0;
         private static final int VIEW_TYPE_CONTENT = 1;
         private final String[] mWeekdays;
         private final int mStartOffset;
         private final int mDays;
         private final long mBaseTimeMillis;
+        private final Set<Integer> mEvents = new HashSet<>();
+        private Cursor mCursor;
         private int mSelectedPosition = -1;
 
-        public EventAdapter(long monthMillis) {
+        public GridAdapter(long monthMillis) {
             mWeekdays = DateFormatSymbols.getInstance().getShortWeekdays();
             mBaseTimeMillis = CalendarUtils.monthFirstDay(monthMillis);
             mStartOffset = CalendarUtils.monthFirstDayOffset(mBaseTimeMillis) + SPANS_COUNT;
@@ -160,6 +178,12 @@ class MonthView extends RecyclerView {
                         spannable.setSpan(new CircleSpan(textView.getContext()), 0,
                                 dayString.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                     }
+                    if (mEvents.contains(dayIndex)) {
+                        spannable.setSpan(new ForegroundColorSpan(
+                                ContextCompat.getColor(textView.getContext(), R.color.colorAccent)),
+                                0, dayString.length(),
+                                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    }
                     textView.setText(spannable, TextView.BufferType.SPANNABLE);
                     textView.setOnClickListener(new OnClickListener() {
                         @Override
@@ -189,6 +213,43 @@ class MonthView extends RecyclerView {
                     mStartOffset + CalendarUtils.dayOfMonth(dayMillis) - 1, false);
         }
 
+        void swapCursor(@NonNull Cursor cursor) {
+            if (mCursor == cursor) {
+                return;
+            }
+            mCursor = cursor;
+            Iterator<Integer> iterator = mEvents.iterator();
+            while (iterator.hasNext()) {
+                int dayIndex = iterator.next();
+                iterator.remove();
+                notifyItemChanged(dayIndex + mStartOffset);
+            }
+            if (!mCursor.moveToFirst()) {
+                return;
+            }
+            // TODO improve performance
+            do {
+                long start = mCursor.getLong(mCursor.getColumnIndexOrThrow(
+                        CalendarContract.Events.DTSTART));
+                long end = mCursor.getLong(mCursor.getColumnIndexOrThrow(
+                        CalendarContract.Events.DTEND));
+                boolean allDay = mCursor.getInt(
+                        mCursor.getColumnIndexOrThrow(CalendarContract.Events.ALL_DAY)) == 1;
+                if (allDay) {
+                    end -= DateUtils.DAY_IN_MILLIS;
+                }
+                int startIndex = (int) ((start - mBaseTimeMillis) / DateUtils.DAY_IN_MILLIS);
+                int endIndex = (int) ((end - mBaseTimeMillis) / DateUtils.DAY_IN_MILLIS);
+                endIndex = Math.min(endIndex, getItemCount() - mStartOffset - 1);
+                for (int dayIndex = startIndex; dayIndex <= endIndex; dayIndex++) {
+                    if (!mEvents.contains(dayIndex)) {
+                        mEvents.add(dayIndex);
+                        notifyItemChanged(dayIndex + mStartOffset);
+                    }
+                }
+            } while (mCursor.moveToNext());
+        }
+
         private void setSelectedPosition(int position, boolean notifyObservers) {
             int last = mSelectedPosition;
             if (position == last) {
@@ -207,7 +268,7 @@ class MonthView extends RecyclerView {
         }
     }
 
-    static abstract class CellViewHolder extends ViewHolder {
+    static abstract class CellViewHolder extends RecyclerView.ViewHolder {
 
         public CellViewHolder(View itemView) {
             super(itemView);

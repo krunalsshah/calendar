@@ -94,6 +94,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        mCalendarView.deactivate();
         mAgendaView.setAdapter(null); // force detaching adapter
     }
 
@@ -144,6 +145,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadEvents() {
+        mCalendarView.setCalendarAdapter(new CalendarCursorAdapter(this));
         mAgendaView.setAdapter(new AgendaCursorAdapter(this));
     }
 
@@ -246,7 +248,23 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected void loadEvents(long timeMillis) {
-            mHandler.startQuery(timeMillis, timeMillis + DateUtils.DAY_IN_MILLIS);
+            mHandler.startQuery(timeMillis, timeMillis, timeMillis + DateUtils.DAY_IN_MILLIS);
+        }
+    }
+
+    static class CalendarCursorAdapter extends EventCalendarView.CalendarAdapter {
+        private final MonthEventsQueryHandler mHandler;
+
+        public CalendarCursorAdapter(Context context) {
+            mHandler = new MonthEventsQueryHandler(context.getContentResolver(), this);
+        }
+
+        @Override
+        protected void loadEvents(long monthMillis) {
+            long startTimeMillis = CalendarUtils.monthFirstDay(monthMillis),
+                    endTimeMillis = startTimeMillis + DateUtils.DAY_IN_MILLIS *
+                            CalendarUtils.monthSize(monthMillis);
+            mHandler.startQuery(monthMillis, startTimeMillis, endTimeMillis);
         }
     }
 
@@ -265,6 +283,20 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    static class MonthEventsQueryHandler extends EventsQueryHandler {
+
+        private final CalendarCursorAdapter mAdapter;
+
+        public MonthEventsQueryHandler(ContentResolver cr, CalendarCursorAdapter adapter) {
+            super(cr);
+            mAdapter = adapter;
+        }
+
+        @Override
+        protected void onQueryComplete(int token, Object cookie, Cursor cursor) {
+            mAdapter.bindEvents((Long) cookie, cursor);
+        }
+    }
 
     static abstract class EventsQueryHandler extends AsyncQueryHandler {
 
@@ -272,8 +304,8 @@ public class MainActivity extends AppCompatActivity {
             super(cr);
         }
 
-        protected final void startQuery(long startTimeMillis, long endTimeMillis) {
-            startQuery(0, startTimeMillis,
+        protected final void startQuery(Object cookie, long startTimeMillis, long endTimeMillis) {
+            startQuery(0, cookie,
                     CalendarContract.Events.CONTENT_URI,
                     EVENTS_PROJECTION,
                     "(" + CalendarContract.Events.DTSTART + ">=? AND " +
