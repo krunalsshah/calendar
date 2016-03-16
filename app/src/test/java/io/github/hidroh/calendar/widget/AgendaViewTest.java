@@ -49,7 +49,7 @@ public class AgendaViewTest {
     private AgendaAdapter adapter;
     private final long todayMillis = CalendarUtils.today();
     private final long lastDayMillis = todayMillis +
-            DateUtils.DAY_IN_MILLIS * (AgendaAdapter.MONTH_SIZE - 1);
+            DateUtils.DAY_IN_MILLIS * (AgendaAdapter.BLOCK_SIZE - 1);
     private LinearLayoutManager layoutManager;
 
     @Before
@@ -64,7 +64,7 @@ public class AgendaViewTest {
     @Test
     public void testInitialLayout() {
         // initial layout should have 1 block of 31 days (each with group + placeholder)
-        assertThat(adapter.getItemCount()).isEqualTo(AgendaAdapter.MONTH_SIZE * 2);
+        assertThat(adapter.getItemCount()).isEqualTo(AgendaAdapter.BLOCK_SIZE * 2);
         // first visible item should be today by default
         assertHasDate(createBindViewHolder(0), todayMillis);
         assertThat((TextView) createBindViewHolder(1).itemView)
@@ -76,7 +76,7 @@ public class AgendaViewTest {
         assertHasDate(createBindViewHolder(0), todayMillis);
         agendaView.smoothScrollToPosition(0);
         assertHasDate(createBindViewHolder(0), todayMillis -
-                DateUtils.DAY_IN_MILLIS * AgendaAdapter.MONTH_SIZE);
+                DateUtils.DAY_IN_MILLIS * AgendaAdapter.BLOCK_SIZE);
     }
 
     @Test
@@ -88,7 +88,7 @@ public class AgendaViewTest {
                 .scrollToLastPosition();
         lastPosition = adapter.getItemCount() - 1;
         assertHasDate(createBindViewHolder(lastPosition - 1),
-                lastDayMillis + DateUtils.DAY_IN_MILLIS * AgendaAdapter.MONTH_SIZE);
+                lastDayMillis + DateUtils.DAY_IN_MILLIS * AgendaAdapter.BLOCK_SIZE);
     }
 
     @Test
@@ -132,7 +132,7 @@ public class AgendaViewTest {
         assertHasDate(createBindViewHolder(layoutManager.findFirstVisibleItemPosition()),
                 beforeFirstDayMillis);
         assertHasDate(createBindViewHolder(0), todayMillis -
-                DateUtils.DAY_IN_MILLIS * AgendaAdapter.MONTH_SIZE);
+                DateUtils.DAY_IN_MILLIS * AgendaAdapter.BLOCK_SIZE);
     }
 
     @Test
@@ -143,7 +143,7 @@ public class AgendaViewTest {
         assertHasDate(createBindViewHolder(layoutManager.findFirstVisibleItemPosition()),
                 afterLastDayMillis);
         assertHasDate(createBindViewHolder(adapter.getItemCount() - 2),
-                lastDayMillis + DateUtils.DAY_IN_MILLIS * AgendaAdapter.MONTH_SIZE);
+                lastDayMillis + DateUtils.DAY_IN_MILLIS * AgendaAdapter.BLOCK_SIZE);
     }
 
     @Test
@@ -247,7 +247,7 @@ public class AgendaViewTest {
     @Test
     public void testStateRestoration() {
         agendaView.smoothScrollToPosition(0);
-        int expected = AgendaAdapter.MONTH_SIZE * 2 * 2; // prepended
+        int expected = AgendaAdapter.MAX_SIZE * 2; // prepended
         assertThat(adapter.getItemCount()).isEqualTo(expected);
         Parcelable savedState = agendaView.onSaveInstanceState();
         agendaView.onRestoreInstanceState(savedState);

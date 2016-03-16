@@ -32,8 +32,9 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
     private static final String STATE_EVENT_GROUPS = "state:eventGroups";
     private static final int VIEW_TYPE_HEADER = 0;
     private static final int VIEW_TYPE_CONTENT = 1;
-    @VisibleForTesting static final int MONTH_SIZE = 31;
-    @VisibleForTesting static final int MAX_SIZE = MONTH_SIZE * 2;
+    private static final int MONTH_SIZE = 31;
+    @VisibleForTesting static final int BLOCK_SIZE = MONTH_SIZE * 2; // max potential scroll range
+    @VisibleForTesting static final int MAX_SIZE = MONTH_SIZE * 3;
 
     private final EventGroup.EventObserver mEventObserver = new EventGroup.EventObserver() {
         @Override
@@ -41,7 +42,7 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
             loadEvents(timeMillis);
         }
     };
-    private final EventGroupList mEventGroups = new EventGroupList(MONTH_SIZE);
+    private final EventGroupList mEventGroups = new EventGroupList(BLOCK_SIZE);
     private final LayoutInflater mInflater;
     private boolean mLock;
 
@@ -196,7 +197,7 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
      */
     void prepend(Context context) {
         long daysMillis = mEventGroups.size() * DateUtils.DAY_IN_MILLIS;
-        int count = MONTH_SIZE, inserted = 0;
+        int count = BLOCK_SIZE, inserted = 0;
         for (int i = 0; i < count; i++) {
             EventGroup last = mEventGroups.get(mEventGroups.size() - 1 - i);
             EventGroup first = new EventGroup(context, last.mTimeMillis - daysMillis);
@@ -215,7 +216,7 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
      * @see {@link #prepend(Context)}
      */
     void append(Context context) {
-        int count = MONTH_SIZE;
+        int count = BLOCK_SIZE;
         if (mEventGroups.isEmpty()) {
             long today = CalendarUtils.today();
             for (int i = 0; i < count; i++) {

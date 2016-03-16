@@ -89,7 +89,7 @@ public class MainActivityTest {
 
     @Test
     public void testAgendaViewDayChange() {
-        long prevMonth = CalendarUtils.addMonths(CalendarUtils.today(), -1);
+        long topAgendaMonth = CalendarUtils.addMonths(CalendarUtils.today(), -2);
 
         // initial state
         int initialCalendarPage = calendarView.getCurrentItem();
@@ -97,7 +97,7 @@ public class MainActivityTest {
 
         // scroll agenda view to top, should update title and swipe calendar view right
         agendaView.smoothScrollToPosition(0);
-        assertTitle(prevMonth);
+        assertTitle(topAgendaMonth);
         assertThat(calendarView.getCurrentItem()).isEqualTo(initialCalendarPage - 1);
     }
 
