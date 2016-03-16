@@ -60,7 +60,10 @@ public class MainActivity extends AppCompatActivity {
         super.onRestoreInstanceState(savedInstanceState);
         mCoordinator.restoreState(savedInstanceState);
         if (savedInstanceState.getBoolean(STATE_TOOLBAR_TOGGLE, false)) {
-            mToolbarToggle.performClick();
+            View toggleButton = findViewById(R.id.toolbar_toggle_frame);
+            if (toggleButton != null) { // can be null as disabled in landscape
+                toggleButton.performClick();
+            }
         }
     }
 
@@ -111,13 +114,16 @@ public class MainActivity extends AppCompatActivity {
 
     private void setupContentView() {
         mToolbarToggle = (CheckedTextView) findViewById(R.id.toolbar_toggle);
-        mToolbarToggle.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mToolbarToggle.toggle();
-                toggleCalendarView();
-            }
-        });
+        View toggleButton = findViewById(R.id.toolbar_toggle_frame);
+        if (toggleButton != null) { // can be null as disabled in landscape
+            toggleButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    mToolbarToggle.toggle();
+                    toggleCalendarView();
+                }
+            });
+        }
         mCalendarView = (EventCalendarView) findViewById(R.id.calendar_view);
         mAgendaView = (AgendaView) findViewById(R.id.agenda_view);
     }

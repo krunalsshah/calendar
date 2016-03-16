@@ -8,6 +8,7 @@ import android.provider.CalendarContract;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.view.View;
 import android.widget.CheckedTextView;
 import android.widget.TextView;
 
@@ -43,6 +44,7 @@ public class MainActivityTest {
     private ActivityController<TestMainActivity> controller;
     private MainActivity activity;
     private CheckedTextView toggle;
+    private View toggleButton;
     private EventCalendarView calendarView;
     private AgendaView agendaView;
 
@@ -52,6 +54,7 @@ public class MainActivityTest {
         controller.create().start().postCreate(null).resume();
         activity = controller.get();
         toggle = (CheckedTextView) activity.findViewById(R.id.toolbar_toggle);
+        toggleButton = activity.findViewById(R.id.toolbar_toggle_frame);
         calendarView = (EventCalendarView) activity.findViewById(R.id.calendar_view);
         agendaView = (AgendaView) activity.findViewById(R.id.agenda_view);
     }
@@ -64,11 +67,11 @@ public class MainActivityTest {
                 CalendarUtils.today()));
 
         // toggle on
-        toggle.performClick();
+        toggleButton.performClick();
         assertToggleOn();
 
         // toggle off
-        toggle.performClick();
+        toggleButton.performClick();
         assertToggleOff();
     }
 
@@ -108,16 +111,19 @@ public class MainActivityTest {
 
         // recreate
         shadowOf(activity).recreate();
+        toggle = (CheckedTextView) activity.findViewById(R.id.toolbar_toggle);
         assertToggleOff();
 
         // toggle on
+        toggleButton = activity.findViewById(R.id.toolbar_toggle_frame);
         toggle = (CheckedTextView) activity.findViewById(R.id.toolbar_toggle);
         //noinspection ConstantConditions
-        toggle.performClick();
+        toggleButton.performClick();
         assertToggleOn();
 
         // recreate
         shadowOf(activity).recreate();
+        toggle = (CheckedTextView) activity.findViewById(R.id.toolbar_toggle);
         assertToggleOn();
     }
 
