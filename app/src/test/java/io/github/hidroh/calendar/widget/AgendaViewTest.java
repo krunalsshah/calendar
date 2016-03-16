@@ -1,11 +1,8 @@
 package io.github.hidroh.calendar.widget;
 
-import android.database.ContentObserver;
 import android.database.Cursor;
-import android.database.MatrixCursor;
 import android.os.Bundle;
 import android.os.Parcelable;
-import android.provider.CalendarContract;
 import android.support.annotation.Nullable;
 import android.support.v4.util.LongSparseArray;
 import android.support.v7.app.AppCompatActivity;
@@ -29,6 +26,7 @@ import org.robolectric.util.ActivityController;
 
 import io.github.hidroh.calendar.CalendarUtils;
 import io.github.hidroh.calendar.R;
+import io.github.hidroh.calendar.test.TestCursor;
 import io.github.hidroh.calendar.test.shadows.ShadowLinearLayoutManager;
 import io.github.hidroh.calendar.test.shadows.ShadowRecyclerView;
 
@@ -185,8 +183,8 @@ public class AgendaViewTest {
 
         // trigger cursor loading and binding
         TestCursor cursor = new TestCursor();
-        cursor.addRow(new Object[]{"Event 1", todayMillis + 1000});
-        cursor.addRow(new Object[]{"Event 2", todayMillis + 2000});
+        cursor.addRow(new Object[]{"Event 1", todayMillis + 1000, todayMillis + 1000, 0});
+        cursor.addRow(new Object[]{"Event 2", todayMillis + 2000, todayMillis + 2000, 0});
         activity.cursors.put(todayMillis, cursor);
         createBindViewHolder(0);
 
@@ -219,8 +217,8 @@ public class AgendaViewTest {
 
         // trigger content change notification
         TestCursor multiEventCursor = new TestCursor();
-        multiEventCursor.addRow(new Object[]{"Event 1", todayMillis + 1000});
-        multiEventCursor.addRow(new Object[]{"Event 2", todayMillis + 2000});
+        multiEventCursor.addRow(new Object[]{"Event 1", todayMillis + 1000, todayMillis + 1000, 0});
+        multiEventCursor.addRow(new Object[]{"Event 2", todayMillis + 2000, todayMillis + 2000, 0});
         activity.cursors.put(todayMillis, multiEventCursor);
         noEventCursor.notifyContentChange(false);
 
@@ -233,7 +231,7 @@ public class AgendaViewTest {
 
         // trigger content change notification
         TestCursor singleEventCursor = new TestCursor();
-        singleEventCursor.addRow(new Object[]{"Event 3", todayMillis + 3000});
+        singleEventCursor.addRow(new Object[]{"Event 3", todayMillis + 3000, todayMillis + 3000, 0});
         activity.cursors.put(todayMillis, singleEventCursor);
         multiEventCursor.notifyContentChange(false);
 
@@ -294,29 +292,4 @@ public class AgendaViewTest {
         }
     }
 
-    static class TestCursor extends MatrixCursor {
-        private ContentObserver contentObserver;
-
-        public TestCursor() {
-            super(new String[]{
-                    CalendarContract.Events.TITLE,
-                    CalendarContract.Events.DTSTART});
-        }
-
-        @Override
-        public void registerContentObserver(ContentObserver observer) {
-            contentObserver = observer;
-        }
-
-        @Override
-        public void unregisterContentObserver(ContentObserver observer) {
-            contentObserver = null;
-        }
-
-        public void notifyContentChange(boolean selfChange) {
-            if (contentObserver != null) {
-                contentObserver.onChange(selfChange);
-            }
-        }
-    }
 }

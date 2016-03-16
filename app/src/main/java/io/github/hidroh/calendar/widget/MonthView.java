@@ -135,7 +135,7 @@ class MonthView extends RecyclerView {
         private final int mStartOffset;
         private final int mDays;
         private final long mBaseTimeMillis;
-        private final Set<Integer> mEvents = new HashSet<>();
+        @VisibleForTesting final Set<Integer> mEvents = new HashSet<>();
         private Cursor mCursor;
         private int mSelectedPosition = -1;
 

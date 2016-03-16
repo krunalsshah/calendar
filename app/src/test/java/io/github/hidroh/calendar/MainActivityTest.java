@@ -130,7 +130,7 @@ public class MainActivityTest {
     }
 
     @Test
-    public void testQueryCalendarProvider() {
+    public void testQueryDay() {
         RoboCursor cursor = new TestRoboCursor();
         cursor.setResults(new Object[][]{
                 new Object[]{"Event 1", CalendarUtils.today()}
@@ -141,7 +141,6 @@ public class MainActivityTest {
         // trigger loading from provider
         agendaView.getAdapter().bindViewHolder(agendaView.getAdapter()
                 .createViewHolder(agendaView, 0), 0);
-        Robolectric.flushBackgroundThreadScheduler();
 
         // binding from provider should replace placeholder
         RecyclerView.ViewHolder viewHolder = agendaView.getAdapter()

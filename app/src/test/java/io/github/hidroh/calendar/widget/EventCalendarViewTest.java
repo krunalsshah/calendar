@@ -7,7 +7,6 @@ import android.text.format.DateUtils;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import org.assertj.android.api.Assertions;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -20,9 +19,13 @@ import org.robolectric.util.ActivityController;
 
 import io.github.hidroh.calendar.CalendarUtils;
 import io.github.hidroh.calendar.R;
+import io.github.hidroh.calendar.test.TestCursor;
 import io.github.hidroh.calendar.test.shadows.ShadowViewPager;
 
 import static io.github.hidroh.calendar.test.assertions.DayTimeAssert.assertThat;
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertTrue;
+import static org.assertj.android.api.Assertions.assertThat;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -47,8 +50,8 @@ public class EventCalendarViewTest {
     @Test
     public void testMonthData() {
         // initial state: 1 active, 2 hidden and 2 uninitialized
-        Assertions.assertThat(calendarView).hasChildCount(3);
-        Assertions.assertThat(calendarView.getChildAt(0)).isInstanceOf(MonthView.class);
+        assertThat(calendarView).hasChildCount(3);
+        assertThat(calendarView.getChildAt(0)).isInstanceOf(MonthView.class);
         assertThat(getMonthAt(2))
                 .isInSameMonthAs(todayMillis)
                 .isMonthsAfter(getMonthAt(1), 1)
@@ -182,6 +185,44 @@ public class EventCalendarViewTest {
         // TODO test changing day from month view, should generate notification
     }
 
+    @Test
+    public void testBindCursor() {
+        // setting calendar adapter should load and bind cursor
+        TestCursor cursor = new TestCursor();
+        cursor.addRow(new Object[]{"Event 1", todayMillis, todayMillis, 0});
+        TestCalendarAdapter testAdapter = new TestCalendarAdapter();
+        testAdapter.cursor = cursor;
+        calendarView.setCalendarAdapter(testAdapter);
+        assertThat(cursor).isNotClosed();
+        assertTrue(cursor.hasContentObserver());
+
+        // deactivating should close cursor and unregister content observer
+        calendarView.deactivate();
+        assertThat(cursor).isClosed();
+        assertFalse(cursor.hasContentObserver());
+    }
+
+    @Test
+    public void testCursorContentChange() {
+        // setting calendar adapter should load and bind cursor
+        TestCursor cursor = new TestCursor();
+        cursor.addRow(new Object[]{"Event 1", todayMillis, todayMillis, 0});
+        TestCalendarAdapter testAdapter = new TestCalendarAdapter();
+        testAdapter.cursor = cursor;
+        calendarView.setCalendarAdapter(testAdapter);
+        assertThat(cursor).isNotClosed();
+        assertTrue(cursor.hasContentObserver());
+
+        // content change should load and bind new cursor, deactivate existing cursor
+        TestCursor updatedCursor = new TestCursor();
+        testAdapter.cursor = updatedCursor;
+        cursor.notifyContentChange(false);
+        assertThat(cursor).isClosed();
+        assertFalse(cursor.hasContentObserver());
+        assertThat(updatedCursor).isNotClosed();
+        assertTrue(updatedCursor.hasContentObserver());
+    }
+
     @After
     public void tearDown() {
         controller.pause().stop().destroy();
@@ -206,6 +247,15 @@ public class EventCalendarViewTest {
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT));
             setContentView(calendarView);
+        }
+    }
+
+    static class TestCalendarAdapter extends EventCalendarView.CalendarAdapter {
+        TestCursor cursor = new TestCursor();
+
+        @Override
+        protected void loadEvents(long monthMillis) {
+            bindEvents(monthMillis, cursor);
         }
     }
 }
