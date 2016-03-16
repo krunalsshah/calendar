@@ -22,7 +22,7 @@ public class ShadowRecyclerView extends ShadowViewGroup {
         realObject.getLayoutManager().scrollToPosition(position);
         directlyOn(realObject, RecyclerView.class, "dispatchOnScrolled",
                 ReflectionHelpers.ClassParameter.from(int.class, 0),
-                ReflectionHelpers.ClassParameter.from(int.class, 0));
+                ReflectionHelpers.ClassParameter.from(int.class, 1));
         directlyOn(realObject, RecyclerView.class, "dispatchOnScrollStateChanged",
                 ReflectionHelpers.ClassParameter.from(int.class, RecyclerView.SCROLL_STATE_IDLE));
     }
@@ -34,7 +34,7 @@ public class ShadowRecyclerView extends ShadowViewGroup {
                 .scrollToLastPosition(realObject.getAdapter().getItemCount() - 1);
         directlyOn(realObject, RecyclerView.class, "dispatchOnScrolled",
                 ReflectionHelpers.ClassParameter.from(int.class, 0),
-                ReflectionHelpers.ClassParameter.from(int.class, 0));
+                ReflectionHelpers.ClassParameter.from(int.class, 1));
         directlyOn(realObject, RecyclerView.class, "dispatchOnScrollStateChanged",
                 ReflectionHelpers.ClassParameter.from(int.class, RecyclerView.SCROLL_STATE_IDLE));
     }

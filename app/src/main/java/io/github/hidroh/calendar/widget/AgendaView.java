@@ -25,7 +25,7 @@ public class AgendaView extends RecyclerView {
     private OnDateChangeListener mListener;
     private AgendaAdapter mAdapter;
     // represent top scroll position to be set programmatically
-    private int mPendingScrollPosition = NO_POSITION; // TODO change to 0
+    private int mPendingScrollPosition = NO_POSITION;
     private long mPrevTimeMillis = CalendarUtils.NO_TIME_MILLIS;
     private Bundle mAdapterSavedState;
 
@@ -76,7 +76,9 @@ public class AgendaView extends RecyclerView {
     @Override
     public void onScrolled(int dx, int dy) {
         loadMore();
-        notifyDateChange();
+        if (dy != 0) { // avoid triggering notification on 1st layout
+            notifyDateChange();
+        }
     }
 
     @Override
