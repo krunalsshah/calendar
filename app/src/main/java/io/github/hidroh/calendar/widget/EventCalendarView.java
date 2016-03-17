@@ -29,7 +29,7 @@ public class EventCalendarView extends ViewPager {
                     notifyDayChange(dayMillis);
                 }
             };
-    private final MonthViewPagerAdapter mPagerAdapter = new MonthViewPagerAdapter(mDateChangeListener);
+    private MonthViewPagerAdapter mPagerAdapter;
     private OnChangeListener mListener;
     private CalendarAdapter mCalendarAdapter;
 
@@ -143,7 +143,17 @@ public class EventCalendarView extends ViewPager {
         mPagerAdapter.deactivate();
     }
 
+    /**
+     * Resets view to initial state, clears previous bindings if any
+     */
+    public void reset() {
+        deactivate();
+        init();
+        loadEvents(getCurrentItem());
+    }
+
     private void init() {
+        mPagerAdapter = new MonthViewPagerAdapter(mDateChangeListener);
         setAdapter(mPagerAdapter);
         setCurrentItem(mPagerAdapter.getCount() / 2);
         addOnPageChangeListener(new SimpleOnPageChangeListener() {

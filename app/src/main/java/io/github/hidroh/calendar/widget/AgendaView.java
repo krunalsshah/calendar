@@ -104,6 +104,7 @@ public class AgendaView extends RecyclerView {
                 mAdapter.restoreState(mAdapterSavedState);
                 mAdapterSavedState = null;
             } else {
+                // TODO 1st layout after permission granted does not refresh views
                 mAdapter.append(getContext());
             }
         }
@@ -131,6 +132,26 @@ public class AgendaView extends RecyclerView {
             // lock binding to prevent loading events that might offset scroll position
             mAdapter.lockBinding();
             smoothScrollToPosition(mPendingScrollPosition);
+        }
+    }
+
+    /**
+     * Resets view to initial state, clears previous bindings if any
+     */
+    public void reset() {
+        // clear view state
+        mPendingScrollPosition = NO_POSITION;
+        mPrevTimeMillis = CalendarUtils.NO_TIME_MILLIS;
+        mAdapterSavedState = null;
+        if (mAdapter != null) {
+            // clear previous adapter data
+            int originalItemCount = mAdapter.getItemCount();
+            mAdapter.deactivate();
+            mAdapter.notifyItemRangeRemoved(0, originalItemCount);
+            // generate new adapter data
+            mAdapter.append(getContext());
+            mAdapter.notifyItemRangeInserted(0, mAdapter.getItemCount());
+            scrollBy(0, 0); // TODO should not have to explicitly trigger layout
         }
     }
 

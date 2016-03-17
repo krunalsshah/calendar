@@ -136,6 +136,25 @@ public class MainActivityTest {
     }
 
     @Test
+    public void testOptionsItemToday() {
+        // initial state
+        int initialCalendarPage = calendarView.getCurrentItem();
+        assertTitle(CalendarUtils.today());
+
+        // swipe calendar view left, should update title
+        ((ShadowViewPager) ShadowExtractor.extract(calendarView)).swipeLeft();
+        assertThat(calendarView.getCurrentItem()).isNotEqualTo(initialCalendarPage);
+        assertThat(toggle).doesNotContainText(CalendarUtils.toMonthString(activity,
+                CalendarUtils.today()));
+
+        // selecting today option should reset to today
+        activity.onCreateOptionsMenu(new RoboMenu(activity));
+        shadowOf(activity).clickMenuItem(R.id.action_today);
+        assertTitle(CalendarUtils.today());
+        assertThat(calendarView.getCurrentItem()).isEqualTo(initialCalendarPage);
+    }
+
+    @Test
     public void testQueryDay() {
         RoboCursor cursor = new TestRoboCursor();
         cursor.setResults(new Object[][]{

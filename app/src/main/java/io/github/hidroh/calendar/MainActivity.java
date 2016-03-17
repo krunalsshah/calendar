@@ -18,6 +18,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.format.DateUtils;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.CheckedTextView;
@@ -87,9 +88,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_today, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
             finish();
+            return true;
+        }
+        if (item.getItemId() == R.id.action_today) {
+            mCoordinator.reset();
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -254,6 +265,17 @@ public class MainActivity extends AppCompatActivity {
         void restoreState(Bundle savedState) {
             mSelectedDayMillis = savedState.getLong(STATE_SELECTED_DATE,
                     CalendarUtils.NO_TIME_MILLIS);
+        }
+
+        void reset() {
+            mSelectedDayMillis = CalendarUtils.today();
+            if (mCalendarView != null) {
+                mCalendarView.reset();
+            }
+            if (mAgendaView != null) {
+                mAgendaView.reset();
+            }
+            updateTitle(mSelectedDayMillis);
         }
 
         private void sync(long dayMillis, View originator) {
