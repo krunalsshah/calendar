@@ -1,17 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:animateLayoutChanges="true"
-    tools:context=".MainActivity">
-
-    <include layout="@layout/toolbar_main"
-        android:id="@+id/toolbar" />
+    tools:showIn="@layout/activity_main"
+    tools:ignore="MergeRootFrame">
 
     <io.github.hidroh.calendar.widget.EventCalendarView
-        android:id="@+id/calendar_view"
-        android:layout_below="@id/toolbar"
+        android:id="@id/calendar_view"
         android:visibility="gone"
         tools:visibility="visible"
         android:elevation="@dimen/default_elevation"
@@ -21,9 +19,8 @@
         tools:ignore="UnusedAttribute" />
 
     <io.github.hidroh.calendar.widget.AgendaView
-        android:id="@+id/agenda_view"
-        android:layout_below="@id/toolbar"
+        android:id="@id/agenda_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 
-</RelativeLayout>
+</FrameLayout>

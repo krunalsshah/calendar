@@ -25,7 +25,7 @@ public class UnderDotSpan extends ReplacementSpan {
                 R.attr.colorAccent,
                 android.R.attr.textColorPrimary
         });
-        mDotColor = ta.getColor(0, ContextCompat.getColor(context, R.color.colorAccent));
+        mDotColor = ta.getColor(0, ContextCompat.getColor(context, R.color.greenA700));
         //noinspection ResourceType
         mTextColor = ta.getColor(1, 0);
         ta.recycle();

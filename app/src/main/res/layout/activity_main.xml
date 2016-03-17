@@ -1,28 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<merge
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:orientation="vertical"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:animateLayoutChanges="true"
-    tools:context=".MainActivity">
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <include layout="@layout/toolbar_main"
-        android:id="@+id/toolbar" />
-
-    <io.github.hidroh.calendar.widget.EventCalendarView
-        android:id="@+id/calendar_view"
-        android:visibility="gone"
-        tools:visibility="visible"
-        android:elevation="@dimen/default_elevation"
-        android:background="?android:attr/colorBackground"
+    <android.support.design.widget.CoordinatorLayout
+        android:id="@+id/coordinator_layout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        tools:ignore="UnusedAttribute" />
+        android:layout_height="match_parent"
+        tools:context=".MainActivity">
 
-    <io.github.hidroh.calendar.widget.AgendaView
-        android:id="@+id/agenda_view"
+        <include layout="@layout/toolbar_main"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <include layout="@layout/include_activity_main"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <include layout="@layout/fab_add"
+            app:layout_anchor="@id/agenda_view"
+            app:layout_anchorGravity="bottom|right|end"
+            android:layout_margin="@dimen/fab_margin"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+    </android.support.design.widget.CoordinatorLayout>
+
+    <ViewStub
+        android:id="@+id/empty"
+        android:inflatedId="@+id/empty"
+        android:layout="@layout/empty_permission"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="match_parent" />
 
-</LinearLayout>
+</merge>

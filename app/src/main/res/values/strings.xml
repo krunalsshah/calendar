@@ -3,4 +3,5 @@
     <string name="no_event">No event</string>
     <string name="permission_required">Calendar access is required to manage your events</string>
     <string name="all_day">All day</string>
+    <string name="grant_access">Grant access</string>
 </resources>

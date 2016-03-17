@@ -11,6 +11,7 @@ import android.provider.CalendarContract;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -21,7 +22,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.CheckedTextView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import io.github.hidroh.calendar.widget.AgendaAdapter;
 import io.github.hidroh.calendar.widget.AgendaView;
@@ -30,6 +30,7 @@ import io.github.hidroh.calendar.widget.EventCalendarView;
 public class MainActivity extends AppCompatActivity {
 
     private static final String STATE_TOOLBAR_TOGGLE = "state:toolbarToggle";
+    private static final String STATE_EMPTY_VISIBLE = "state:emptyVisible";
     private static final String[] EVENTS_PROJECTION = new String[]{
             CalendarContract.Events._ID,
             CalendarContract.Events.CALENDAR_ID,
@@ -43,6 +44,7 @@ public class MainActivity extends AppCompatActivity {
     private CheckedTextView mToolbarToggle;
     private EventCalendarView mCalendarView;
     private AgendaView mAgendaView;
+    private FloatingActionButton mFabAdd;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,10 +73,16 @@ public class MainActivity extends AppCompatActivity {
     protected void onPostCreate(@Nullable Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
         mCoordinator.coordinate(mToolbarToggle, mCalendarView, mAgendaView);
-        if (checkPermissions()) {
-            loadEvents();
+        boolean emptyVisible = savedInstanceState != null &&
+                savedInstanceState.getBoolean(STATE_EMPTY_VISIBLE, false);
+        if (emptyVisible) {
+            toggleEmptyView(true);
         } else {
-            requestPermissions();
+            if (checkPermissions()) {
+                loadEvents();
+            } else {
+                requestPermissions();
+            }
         }
     }
 
@@ -92,6 +100,9 @@ public class MainActivity extends AppCompatActivity {
         super.onSaveInstanceState(outState);
         mCoordinator.saveState(outState);
         outState.putBoolean(STATE_TOOLBAR_TOGGLE, mToolbarToggle.isChecked());
+        //noinspection ConstantConditions
+        outState.putBoolean(STATE_EMPTY_VISIBLE,
+                findViewById(R.id.empty).getVisibility() == View.VISIBLE);
     }
 
     @Override
@@ -106,9 +117,10 @@ public class MainActivity extends AppCompatActivity {
                                            @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (checkPermissions()) {
+            toggleEmptyView(false);
             loadEvents();
         } else {
-            Toast.makeText(this, R.string.permission_required, Toast.LENGTH_SHORT).show();
+            toggleEmptyView(true);
         }
     }
 
@@ -126,6 +138,9 @@ public class MainActivity extends AppCompatActivity {
         }
         mCalendarView = (EventCalendarView) findViewById(R.id.calendar_view);
         mAgendaView = (AgendaView) findViewById(R.id.agenda_view);
+        mFabAdd = (FloatingActionButton) findViewById(R.id.fab);
+        //noinspection ConstantConditions
+        mFabAdd.hide();
     }
 
     private void toggleCalendarView() {
@@ -136,13 +151,31 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    @SuppressWarnings("ConstantConditions")
+    private void toggleEmptyView(boolean visible) {
+        if (visible) {
+            findViewById(R.id.empty).setVisibility(View.VISIBLE);
+            findViewById(R.id.empty).bringToFront();
+            findViewById(R.id.button_permission)
+                    .setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            requestPermissions();
+                        }
+                    });
+        } else {
+            findViewById(R.id.empty).setVisibility(View.GONE);
+        }
+    }
+
     private boolean checkPermissions() {
         return (checkPermission(Manifest.permission.READ_CALENDAR) |
                 checkPermission(Manifest.permission.WRITE_CALENDAR)) ==
                 PackageManager.PERMISSION_GRANTED;
     }
 
-    private void requestPermissions() {
+    @VisibleForTesting
+    protected void requestPermissions() {
         ActivityCompat.requestPermissions(this,
                 new String[]{
                         Manifest.permission.READ_CALENDAR,
@@ -151,6 +184,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadEvents() {
+        mFabAdd.show();
         mCalendarView.setCalendarAdapter(new CalendarCursorAdapter(this));
         mAgendaView.setAdapter(new AgendaCursorAdapter(this));
     }

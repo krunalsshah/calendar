@@ -25,7 +25,7 @@ public class CircleSpan extends ReplacementSpan {
                 R.attr.colorAccent,
                 android.R.attr.textColorPrimaryInverse
         });
-        mCircleColor = ta.getColor(0, ContextCompat.getColor(context, R.color.colorAccent));
+        mCircleColor = ta.getColor(0, ContextCompat.getColor(context, R.color.greenA700));
         //noinspection ResourceType
         mTextColor = ta.getColor(1, 0);
         ta.recycle();

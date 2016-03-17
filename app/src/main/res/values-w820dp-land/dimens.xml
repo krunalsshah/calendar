@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="calendar_width">392dp</dimen>
-    <dimen name="margin">16dp</dimen>
 </resources>
