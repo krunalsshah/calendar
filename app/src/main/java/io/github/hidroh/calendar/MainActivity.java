@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.AsyncQueryHandler;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.os.Bundle;
@@ -27,6 +28,7 @@ import android.widget.TextView;
 import io.github.hidroh.calendar.widget.AgendaAdapter;
 import io.github.hidroh.calendar.widget.AgendaView;
 import io.github.hidroh.calendar.widget.EventCalendarView;
+import io.github.hidroh.calendar.widget.EventEditView;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -150,6 +152,12 @@ public class MainActivity extends AppCompatActivity {
         mCalendarView = (EventCalendarView) findViewById(R.id.calendar_view);
         mAgendaView = (AgendaView) findViewById(R.id.agenda_view);
         mFabAdd = (FloatingActionButton) findViewById(R.id.fab);
+        mFabAdd.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                createEvent();
+            }
+        });
         //noinspection ConstantConditions
         mFabAdd.hide();
     }
@@ -177,6 +185,12 @@ public class MainActivity extends AppCompatActivity {
         } else {
             findViewById(R.id.empty).setVisibility(View.GONE);
         }
+    }
+
+    private void createEvent() {
+        startActivity(new Intent(this, EditActivity.class)
+                .putExtra(EditActivity.EXTRA_EVENT,
+                        EventEditView.Event.createInstance()));
     }
 
     private boolean checkPermissions() {

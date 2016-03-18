@@ -3,6 +3,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:text="Mon, March 7th, 2016"
     style="@style/TextAppearance.AppCompat.Caption"
-    android:padding="@dimen/padding"
+    android:paddingTop="@dimen/padding"
+    android:paddingBottom="@dimen/padding"
+    android:paddingLeft="@dimen/horizontal_padding"
+    android:paddingRight="@dimen/horizontal_padding"
     android:layout_width="match_parent"
     android:layout_height="wrap_content" />

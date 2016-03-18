@@ -6,17 +6,19 @@ import android.text.format.DateUtils;
 
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.TimeZone;
 
 public class CalendarUtils {
 
     public static final long NO_TIME_MILLIS = -1;
+    public static final String TIMEZONE_UTC = "UTC";
 
     public static boolean isNotTime(long timeMillis) {
         return timeMillis == NO_TIME_MILLIS;
     }
 
     public static long today() {
-        CalendarDate calendar = CalendarDate.today();
+        DateOnlyCalendar calendar = DateOnlyCalendar.today();
         long timeMillis = calendar.getTimeInMillis();
         calendar.recycle();
         return timeMillis;
@@ -45,8 +47,8 @@ public class CalendarUtils {
         if (isNotTime(first) || isNotTime(second)) {
             return false; // not comparable
         }
-        CalendarDate firstCalendar = CalendarDate.fromTime(first);
-        CalendarDate secondCalendar = CalendarDate.fromTime(second);
+        DateOnlyCalendar firstCalendar = DateOnlyCalendar.fromTime(first);
+        DateOnlyCalendar secondCalendar = DateOnlyCalendar.fromTime(second);
         boolean same = firstCalendar.sameMonth(secondCalendar);
         firstCalendar.recycle();
         secondCalendar.recycle();
@@ -57,7 +59,7 @@ public class CalendarUtils {
         if (isNotTime(timeMillis)) {
             return -1;
         }
-        CalendarDate calendar = CalendarDate.fromTime(timeMillis);
+        DateOnlyCalendar calendar = DateOnlyCalendar.fromTime(timeMillis);
         //noinspection ConstantConditions
         int day = calendar.get(Calendar.DAY_OF_MONTH);
         calendar.recycle();
@@ -69,8 +71,8 @@ public class CalendarUtils {
         if (isNotTime(first) || isNotTime(second)) {
             return false;
         }
-        CalendarDate firstCalendar = CalendarDate.fromTime(first);
-        CalendarDate secondCalendar = CalendarDate.fromTime(second);
+        DateOnlyCalendar firstCalendar = DateOnlyCalendar.fromTime(first);
+        DateOnlyCalendar secondCalendar = DateOnlyCalendar.fromTime(second);
         boolean before = firstCalendar.monthBefore(secondCalendar);
         firstCalendar.recycle();
         secondCalendar.recycle();
@@ -82,8 +84,8 @@ public class CalendarUtils {
         if (isNotTime(first) || isNotTime(second)) {
             return false;
         }
-        CalendarDate firstCalendar = CalendarDate.fromTime(first);
-        CalendarDate secondCalendar = CalendarDate.fromTime(second);
+        DateOnlyCalendar firstCalendar = DateOnlyCalendar.fromTime(first);
+        DateOnlyCalendar secondCalendar = DateOnlyCalendar.fromTime(second);
         boolean after = firstCalendar.monthAfter(secondCalendar);
         firstCalendar.recycle();
         secondCalendar.recycle();
@@ -94,7 +96,7 @@ public class CalendarUtils {
         if (isNotTime(timeMillis)) {
             return NO_TIME_MILLIS;
         }
-        CalendarDate calendar = CalendarDate.fromTime(timeMillis);
+        DateOnlyCalendar calendar = DateOnlyCalendar.fromTime(timeMillis);
         //noinspection ConstantConditions
         calendar.add(Calendar.MONTH, months);
         long result = calendar.getTimeInMillis();
@@ -106,7 +108,7 @@ public class CalendarUtils {
         if (isNotTime(monthMillis)) {
             return NO_TIME_MILLIS;
         }
-        CalendarDate calendar = CalendarDate.fromTime(monthMillis);
+        DateOnlyCalendar calendar = DateOnlyCalendar.fromTime(monthMillis);
         //noinspection ConstantConditions
         calendar.set(Calendar.DAY_OF_MONTH, 1);
         long result = calendar.getTimeInMillis();
@@ -118,7 +120,7 @@ public class CalendarUtils {
         if (isNotTime(monthMillis)) {
             return NO_TIME_MILLIS;
         }
-        CalendarDate calendar = CalendarDate.fromTime(monthMillis);
+        DateOnlyCalendar calendar = DateOnlyCalendar.fromTime(monthMillis);
         //noinspection ConstantConditions
         calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMaximum(Calendar.DAY_OF_MONTH));
         long result = calendar.getTimeInMillis();
@@ -130,7 +132,7 @@ public class CalendarUtils {
         if (isNotTime(monthMillis)) {
             return 0;
         }
-        CalendarDate calendar = CalendarDate.fromTime(monthMillis);
+        DateOnlyCalendar calendar = DateOnlyCalendar.fromTime(monthMillis);
         //noinspection ConstantConditions
         int size = calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
         calendar.recycle();
@@ -141,40 +143,68 @@ public class CalendarUtils {
         if (isNotTime(monthMillis)) {
             return 0;
         }
-        CalendarDate calendar = CalendarDate.fromTime(monthMillis);
+        DateOnlyCalendar calendar = DateOnlyCalendar.fromTime(monthMillis);
         //noinspection ConstantConditions
         int offset = calendar.get(Calendar.DAY_OF_WEEK) - calendar.getFirstDayOfWeek();
         calendar.recycle();
         return offset;
     }
 
+    public static long toLocalTimeZone(long utcTimeMillis) {
+        return convertTimeZone(TimeZone.getTimeZone(TIMEZONE_UTC), TimeZone.getDefault(),
+                utcTimeMillis);
+    }
+
+    public static long toUtcTimeZone(long localTimeMillis) {
+        return convertTimeZone(TimeZone.getDefault(), TimeZone.getTimeZone(TIMEZONE_UTC),
+                localTimeMillis);
+    }
+
+    private static long convertTimeZone(TimeZone fromTimeZone, TimeZone toTimeZone, long timeMillis) {
+        DateOnlyCalendar fromCalendar = DateOnlyCalendar.obtain();
+        fromCalendar.setTimeZone(fromTimeZone);
+        fromCalendar.setTimeInMillis(timeMillis);
+        DateOnlyCalendar toCalendar = DateOnlyCalendar.obtain();
+        toCalendar.setTimeZone(toTimeZone);
+        toCalendar.set(fromCalendar.get(Calendar.YEAR),
+                fromCalendar.get(Calendar.MONTH),
+                fromCalendar.get(Calendar.DAY_OF_MONTH),
+                fromCalendar.get(Calendar.HOUR_OF_DAY),
+                fromCalendar.get(Calendar.MINUTE),
+                fromCalendar.get(Calendar.SECOND));
+        long localTimeMillis = toCalendar.getTimeInMillis();
+        fromCalendar.recycle();
+        toCalendar.recycle();
+        return localTimeMillis;
+
+    }
     /**
-     * Light extension of {@link CalendarDate} that strips away time, keeping only date information
+     * Light extension of {@link Calendar} that strips away time, keeping only date information
      */
-    private static class CalendarDate extends GregorianCalendar {
+    private static class DateOnlyCalendar extends GregorianCalendar {
 
-        private static Pools.SimplePool<CalendarDate> sPools = new Pools.SimplePool<>(5);
+        private static Pools.SimplePool<DateOnlyCalendar> sPools = new Pools.SimplePool<>(5);
 
-        private static CalendarDate obtain() {
-            CalendarDate instance = sPools.acquire();
-            return instance == null ? new CalendarDate() : instance;
+        private static DateOnlyCalendar obtain() {
+            DateOnlyCalendar instance = sPools.acquire();
+            return instance == null ? new DateOnlyCalendar() : instance;
         }
 
-        public static CalendarDate today() {
+        public static DateOnlyCalendar today() {
             return fromTime(System.currentTimeMillis());
         }
 
-        public static CalendarDate fromTime(long timeMillis) {
+        public static DateOnlyCalendar fromTime(long timeMillis) {
             if (timeMillis < 0) {
                 return null;
             }
-            CalendarDate calendarDate = CalendarDate.obtain();
-            calendarDate.setTimeInMillis(timeMillis);
-            calendarDate.stripTime();
-            return calendarDate;
+            DateOnlyCalendar dateOnlyCalendar = DateOnlyCalendar.obtain();
+            dateOnlyCalendar.setTimeInMillis(timeMillis);
+            dateOnlyCalendar.stripTime();
+            return dateOnlyCalendar;
         }
 
-        private CalendarDate() {
+        private DateOnlyCalendar() {
             super();
         }
 
@@ -183,7 +213,7 @@ public class CalendarUtils {
          * @param other    instance to check against
          * @return  true if this instance is at least 1 'month' before, false otherwise
          */
-        public boolean monthBefore(CalendarDate other) {
+        public boolean monthBefore(DateOnlyCalendar other) {
             int day = other.get(DAY_OF_MONTH);
             other.set(DAY_OF_MONTH, 1);
             boolean before = getTimeInMillis() < other.getTimeInMillis();
@@ -196,7 +226,7 @@ public class CalendarUtils {
          * @param other    instance to check against
          * @return  true if this instance is at least 1 'month' after, false otherwise
          */
-        public boolean monthAfter(CalendarDate other) {
+        public boolean monthAfter(DateOnlyCalendar other) {
             int day = other.get(DAY_OF_MONTH);
             other.set(DAY_OF_MONTH, other.getActualMaximum(DAY_OF_MONTH));
             boolean after = getTimeInMillis() > other.getTimeInMillis();
@@ -204,7 +234,7 @@ public class CalendarUtils {
             return after;
         }
 
-        public boolean sameMonth(CalendarDate other) {
+        public boolean sameMonth(DateOnlyCalendar other) {
             return get(YEAR) == other.get(YEAR) && get(MONTH) == other.get(MONTH);
         }
 
@@ -216,6 +246,7 @@ public class CalendarUtils {
         }
 
         void recycle() {
+            setTimeZone(TimeZone.getDefault());
             sPools.release(this);
         }
     }

@@ -1,6 +1,7 @@
 package io.github.hidroh.calendar.widget;
 
 import android.content.Context;
+import android.content.Intent;
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.os.Bundle;
@@ -22,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import io.github.hidroh.calendar.CalendarUtils;
+import io.github.hidroh.calendar.EditActivity;
 import io.github.hidroh.calendar.R;
 
 /**
@@ -73,12 +75,12 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
             loadEvents(position);
             ((GroupViewHolder) holder).textView.setText(item.mTitle);
         } else {
+            final EventItem eventItem = (EventItem) item;
             ContentViewHolder contentHolder = (ContentViewHolder) holder;
-            if (item instanceof NoEventItem) {
+            if (eventItem instanceof NoEventItem) {
                 contentHolder.textViewTime.setVisibility(View.GONE);
                 contentHolder.textViewTitle.setText(R.string.no_event);
             } else { // EventItem
-                EventItem eventItem = (EventItem) item;
                 contentHolder.textViewTime.setVisibility(View.VISIBLE);
                 if (eventItem.mIsAllDay) {
                     contentHolder.textViewTime.setText(R.string.all_day);
@@ -92,7 +94,7 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
             contentHolder.itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    // TODO
+                    editEvent(v.getContext(), eventItem);
                 }
             });
         }
@@ -317,6 +319,20 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
         }
     }
 
+    private void editEvent(Context context, EventItem eventItem) {
+        EventEditView.Event.Builder eventBuilder = new EventEditView.Event.Builder()
+                .start(eventItem.mStartTimeMillis)
+                .end(eventItem.mEndTimeMillis)
+                .allDay(eventItem.mIsAllDay);
+        if (!(eventItem instanceof NoEventItem)) {
+            eventBuilder.id(eventItem.mId)
+                    .calendarId(eventItem.mCalendarId)
+                    .title(eventItem.mTitle);
+        }
+        context.startActivity(new Intent(context, EditActivity.class)
+                .putExtra(EditActivity.EXTRA_EVENT, eventBuilder.build()));
+    }
+
     private void prune(boolean start) {
         if (mEventGroups.size() <= MAX_SIZE) {
             return;
@@ -507,15 +523,11 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
 
         EventItem getItem(int index) {
             if (mCursor == null || mCursor.getCount() == 0) {
-                return new NoEventItem(null, mTimeMillis, mTimeMillis);
+                return new NoEventItem(null, mTimeMillis);
             }
             mCursor.moveToPosition(index);
             // TODO use an object pool
-            return new EventItem(
-                    mCursor.getString(mCursor.getColumnIndex(CalendarContract.Events.TITLE)),
-                    mTimeMillis,
-                    mCursor.getLong(mCursor.getColumnIndex(CalendarContract.Events.DTSTART)),
-                    mCursor.getInt(mCursor.getColumnIndex(CalendarContract.Events.ALL_DAY)) == 1);
+            return new EventItem(mTimeMillis, mCursor);
         }
 
         void setCursor(Cursor cursor, EventGroup.EventObserver eventObserver) {
@@ -547,13 +559,28 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
                 return new EventItem[size];
             }
         };
+        long mId;
         boolean mIsAllDay;
         long mStartTimeMillis;
+        long mEndTimeMillis;
+        long mCalendarId;
 
-        EventItem(String title, long timeMillis, long startTimeMillis, boolean allDay) {
+        EventItem(long timeMillis, Cursor cursor) {
+            super(cursor.getString(cursor.getColumnIndex(CalendarContract.Events.TITLE)), timeMillis);
+            mId = cursor.getLong(cursor.getColumnIndex(CalendarContract.Events._ID));
+            mCalendarId = cursor.getLong(cursor.getColumnIndex(CalendarContract.Events.CALENDAR_ID));
+            mStartTimeMillis = cursor.getLong(cursor.getColumnIndex(CalendarContract.Events.DTSTART));
+            mEndTimeMillis = cursor.getLong(cursor.getColumnIndex(CalendarContract.Events.DTEND));
+            mIsAllDay = cursor.getInt(cursor.getColumnIndex(CalendarContract.Events.ALL_DAY)) == 1;
+            // all-day time in Calendar Provider is midnight in UTC, need to convert to local
+            if (mIsAllDay) {
+                mStartTimeMillis = CalendarUtils.toLocalTimeZone(mStartTimeMillis);
+                mEndTimeMillis = CalendarUtils.toLocalTimeZone(mEndTimeMillis);
+            }
+        }
+
+        EventItem(String title, long timeMillis) {
             super(title, timeMillis);
-            this.mStartTimeMillis = startTimeMillis;
-            this.mIsAllDay = allDay;
         }
 
         private EventItem(Parcel source) {
@@ -583,8 +610,10 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
             }
         };
 
-        NoEventItem(String title, long timeMillis, long startTimeMillis) {
-            super(title, timeMillis, startTimeMillis, true);
+        NoEventItem(String title, long timeMillis) {
+            super(title, timeMillis);
+            mStartTimeMillis = timeMillis;
+            mEndTimeMillis = timeMillis;
         }
 
         NoEventItem(Parcel source) {

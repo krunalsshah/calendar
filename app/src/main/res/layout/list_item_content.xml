@@ -5,13 +5,16 @@
     android:orientation="horizontal"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:minHeight="?attr/listPreferredItemHeightSmall">
+    android:paddingLeft="@dimen/horizontal_padding"
+    android:paddingRight="@dimen/horizontal_padding"
+    android:minHeight="?attr/listPreferredItemHeight">
 
     <TextView
         android:id="@+id/text_view_time"
         tools:text="4:30 PM"
         android:layout_width="@dimen/time_width"
         android:layout_height="match_parent"
+        android:gravity="center_vertical"
         android:padding="@dimen/padding" />
 
     <TextView
@@ -19,6 +22,7 @@
         tools:text="Event"
         style="@style/TextAppearance.AppCompat.Body1"
         android:padding="@dimen/padding"
+        android:gravity="center_vertical"
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1" />
