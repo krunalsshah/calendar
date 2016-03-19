@@ -18,4 +18,8 @@
     <string name="confirm_discard_changes">Discard changes?</string>
     <string name="warning_missing_calendar">Please choose a calendar</string>
     <string name="end_time">Ends\n%s</string>
+    <string name="default_calendar_name">Local Calendar</string>
+    <string name="event_created">Event created.</string>
+    <string name="event_updated">Event updated.</string>
+    <string name="event_deleted">Event deleted.</string>
 </resources>

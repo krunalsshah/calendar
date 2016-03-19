@@ -29,6 +29,7 @@ public class ShadowAsyncQueryHandler {
     @Implementation
     public void startInsert(int token, Object cookie, Uri uri, ContentValues initialValues) {
         shadowOf(ShadowApplication.getInstance().getContentResolver()).insert(uri, initialValues);
+        realObject.onInsertComplete(token, cookie, uri);
     }
 
     @Implementation
@@ -36,6 +37,7 @@ public class ShadowAsyncQueryHandler {
                             ContentValues values, String selection, String[] selectionArgs) {
         shadowOf(ShadowApplication.getInstance().getContentResolver())
                 .update(uri, values, selection, selectionArgs);
+        realObject.onUpdateComplete(token, cookie, 1);
     }
 
     @Implementation
@@ -43,5 +45,6 @@ public class ShadowAsyncQueryHandler {
                                   String selection, String[] selectionArgs) {
         shadowOf(ShadowApplication.getInstance().getContentResolver())
                 .delete(uri, selection, selectionArgs);
+        realObject.onDeleteComplete(token, cookie, 1);
     }
 }

@@ -1,9 +1,9 @@
 package io.github.hidroh.calendar;
 
 import android.content.AsyncQueryHandler;
-import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.database.Cursor;
 import android.net.Uri;
@@ -20,6 +20,9 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import java.lang.ref.WeakReference;
 
 import io.github.hidroh.calendar.content.CalendarCursor;
 import io.github.hidroh.calendar.widget.EventEditView;
@@ -34,6 +37,8 @@ public class EditActivity extends AppCompatActivity implements LoaderManager.Loa
     private static final String EXTRA_CALENDAR_ID = "extra:calendarId";
     private static final int LOADER_CALENDARS = 0;
     private static final int LOADER_SELECTED_CALENDAR = 1;
+    private static final int TOKEN_EVENT = 0;
+    private static final int TOKEN_CALENDAR = 1;
 
     private EventEditView mEventEditView;
 
@@ -137,12 +142,13 @@ public class EditActivity extends AppCompatActivity implements LoaderManager.Loa
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-        if (data == null) {
-            return; // TODO prompt to create calendar
-        }
         if (loader.getId() == LOADER_CALENDARS) {
-            mEventEditView.swapCalendarSource(new CalendarCursor(data));
-        } else if (data.moveToFirst()) {
+            if (data != null && data.moveToFirst()) {
+                mEventEditView.swapCalendarSource(new CalendarCursor(data));
+            } else {
+                createLocalCalendar();
+            }
+        } else if (data != null && data.moveToFirst()) {
             mEventEditView.setSelectedCalendar(new CalendarCursor(data).getDisplayName());
         }
     }
@@ -184,11 +190,11 @@ public class EditActivity extends AppCompatActivity implements LoaderManager.Loa
         if (event.hasId()) {
             Uri uri = ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI,
                     event.getId());
-            new EventQueryHandler(getContentResolver())
-                    .startUpdate(0, null, uri, cv, null, null);
+            new EventQueryHandler(this)
+                    .startUpdate(TOKEN_EVENT, null, uri, cv, null, null);
         } else {
-            new EventQueryHandler(getContentResolver())
-                    .startInsert(0, null, CalendarContract.Events.CONTENT_URI, cv);
+            new EventQueryHandler(this)
+                    .startInsert(TOKEN_EVENT, null, CalendarContract.Events.CONTENT_URI, cv);
         }
         return true;
     }
@@ -221,16 +227,63 @@ public class EditActivity extends AppCompatActivity implements LoaderManager.Loa
     }
 
     private void delete() {
-        new EventQueryHandler(getContentResolver()).startDelete(0, null,
+        new EventQueryHandler(this).startDelete(TOKEN_EVENT, null,
                 ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI,
                         mEventEditView.getEvent().getId()),
                 null, null);
     }
 
+    private void createLocalCalendar() {
+        String name = getString(R.string.default_calendar_name);
+        ContentValues cv = new ContentValues();
+        cv.put(CalendarContract.Calendars.ACCOUNT_NAME, BuildConfig.APPLICATION_ID);
+        cv.put(CalendarContract.Calendars.ACCOUNT_TYPE, CalendarContract.ACCOUNT_TYPE_LOCAL);
+        cv.put(CalendarContract.Calendars.NAME, name);
+        cv.put(CalendarContract.Calendars.CALENDAR_DISPLAY_NAME, name);
+        cv.put(CalendarContract.Calendars.CALENDAR_COLOR, 0);
+        cv.put(CalendarContract.Calendars.CALENDAR_ACCESS_LEVEL,
+                CalendarContract.Calendars.CAL_ACCESS_OWNER);
+        cv.put(CalendarContract.Calendars.OWNER_ACCOUNT, BuildConfig.APPLICATION_ID);
+        new EventQueryHandler(this)
+                .startInsert(TOKEN_CALENDAR, null, CalendarContract.Calendars.CONTENT_URI
+                        .buildUpon()
+                        .appendQueryParameter(CalendarContract.CALLER_IS_SYNCADAPTER, "1")
+                        .appendQueryParameter(CalendarContract.Calendars.ACCOUNT_NAME,
+                                BuildConfig.APPLICATION_ID)
+                        .appendQueryParameter(CalendarContract.Calendars.ACCOUNT_TYPE,
+                                CalendarContract.ACCOUNT_TYPE_LOCAL)
+                        .build()
+                        , cv);
+    }
+
     static class EventQueryHandler extends AsyncQueryHandler {
 
-        public EventQueryHandler(ContentResolver cr) {
-            super(cr);
+        private final WeakReference<Context> mContext;
+
+        public EventQueryHandler(Context context) {
+            super(context.getContentResolver());
+            mContext = new WeakReference<>(context);
+        }
+
+        @Override
+        protected void onInsertComplete(int token, Object cookie, Uri uri) {
+            if (token == TOKEN_EVENT && mContext.get() != null) {
+                Toast.makeText(mContext.get(), R.string.event_created, Toast.LENGTH_SHORT).show();
+            }
+        }
+
+        @Override
+        protected void onUpdateComplete(int token, Object cookie, int result) {
+            if (mContext.get() != null) {
+                Toast.makeText(mContext.get(), R.string.event_updated, Toast.LENGTH_SHORT).show();
+            }
+        }
+
+        @Override
+        protected void onDeleteComplete(int token, Object cookie, int result) {
+            if (mContext.get() != null) {
+                Toast.makeText(mContext.get(), R.string.event_deleted, Toast.LENGTH_SHORT).show();
+            }
         }
     }
 }
