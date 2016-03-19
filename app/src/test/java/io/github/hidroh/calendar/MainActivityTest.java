@@ -27,6 +27,7 @@ import org.robolectric.util.ActivityController;
 
 import java.util.Arrays;
 
+import io.github.hidroh.calendar.content.EventsQueryHandler;
 import io.github.hidroh.calendar.test.shadows.ShadowLinearLayoutManager;
 import io.github.hidroh.calendar.test.shadows.ShadowRecyclerView;
 import io.github.hidroh.calendar.test.shadows.ShadowViewPager;
@@ -158,7 +159,7 @@ public class MainActivityTest {
     public void testQueryDay() {
         RoboCursor cursor = new TestRoboCursor();
         cursor.setResults(new Object[][]{
-                new Object[]{"Event 1", CalendarUtils.today(), CalendarUtils.today(), 0}
+                new Object[]{1L, 1L, "Event 1", CalendarUtils.today(), CalendarUtils.today(), 0}
         });
         shadowOf(ShadowApplication.getInstance().getContentResolver())
                 .setCursor(CalendarContract.Events.CONTENT_URI, cursor);
@@ -216,10 +217,7 @@ public class MainActivityTest {
 
     static class TestRoboCursor extends RoboCursor {
         public TestRoboCursor() {
-            setColumnNames(Arrays.asList(CalendarContract.Events.TITLE,
-                    CalendarContract.Events.DTSTART,
-                    CalendarContract.Events.DTEND,
-                    CalendarContract.Events.ALL_DAY));
+            setColumnNames(Arrays.asList(EventsQueryHandler.PROJECTION));
         }
 
         @Override

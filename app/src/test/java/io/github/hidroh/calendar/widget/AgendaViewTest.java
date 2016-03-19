@@ -184,8 +184,8 @@ public class AgendaViewTest {
 
         // trigger cursor loading and binding
         TestCursor cursor = new TestCursor();
-        cursor.addRow(new Object[]{"Event 1", todayMillis + 28800000, todayMillis + 28800000, 0}); // 8AM UTC
-        cursor.addRow(new Object[]{"Event 2", todayMillis, todayMillis, 1}); // all day
+        cursor.addRow(new Object[]{1L, 1L, "Event 1", todayMillis + 28800000, todayMillis + 28800000, 0}); // 8AM UTC
+        cursor.addRow(new Object[]{1L, 1L, "Event 2", todayMillis, todayMillis, 1}); // all day
         activity.cursors.put(todayMillis, cursor);
         createBindViewHolder(0);
 
@@ -224,8 +224,8 @@ public class AgendaViewTest {
 
         // trigger content change notification
         TestCursor multiEventCursor = new TestCursor();
-        multiEventCursor.addRow(new Object[]{"Event 1", todayMillis + 1000, todayMillis + 1000, 0});
-        multiEventCursor.addRow(new Object[]{"Event 2", todayMillis + 2000, todayMillis + 2000, 0});
+        multiEventCursor.addRow(new Object[]{1L, 1L, "Event 1", todayMillis + 1000, todayMillis + 1000, 0});
+        multiEventCursor.addRow(new Object[]{1L, 1L, "Event 2", todayMillis + 2000, todayMillis + 2000, 0});
         activity.cursors.put(todayMillis, multiEventCursor);
         noEventCursor.notifyContentChange(false);
 
@@ -238,7 +238,7 @@ public class AgendaViewTest {
 
         // trigger content change notification
         TestCursor singleEventCursor = new TestCursor();
-        singleEventCursor.addRow(new Object[]{"Event 3", todayMillis + 3000, todayMillis + 3000, 0});
+        singleEventCursor.addRow(new Object[]{1L, 1L, "Event 3", todayMillis + 3000, todayMillis + 3000, 0});
         activity.cursors.put(todayMillis, singleEventCursor);
         multiEventCursor.notifyContentChange(false);
 

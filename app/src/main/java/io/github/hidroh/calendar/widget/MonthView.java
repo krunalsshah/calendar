@@ -232,8 +232,10 @@ class MonthView extends RecyclerView {
                         CalendarContract.Events.DTEND));
                 boolean allDay = mCursor.getInt(
                         mCursor.getColumnIndexOrThrow(CalendarContract.Events.ALL_DAY)) == 1;
+                // all-day time in Calendar Provider is midnight in UTC, need to convert to local
                 if (allDay) {
-                    end -= DateUtils.DAY_IN_MILLIS;
+                    start = CalendarUtils.toLocalTimeZone(start);
+                    end = CalendarUtils.toLocalTimeZone(end) - DateUtils.DAY_IN_MILLIS;
                 }
                 int startIndex = (int) ((start - mBaseTimeMillis) / DateUtils.DAY_IN_MILLIS);
                 int endIndex = (int) ((end - mBaseTimeMillis) / DateUtils.DAY_IN_MILLIS);

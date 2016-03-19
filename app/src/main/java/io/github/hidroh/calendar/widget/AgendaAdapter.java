@@ -70,31 +70,16 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
         if (mLock) {
             return;
         }
-        AdapterItem item = getAdapterItem(position);
-        if (holder instanceof GroupViewHolder) {
+        final AdapterItem item = getAdapterItem(position);
+        bindTitle(item, holder);
+        if (item instanceof EventGroup) {
             loadEvents(position);
-            ((GroupViewHolder) holder).textView.setText(item.mTitle);
         } else {
-            final EventItem eventItem = (EventItem) item;
-            ContentViewHolder contentHolder = (ContentViewHolder) holder;
-            if (eventItem instanceof NoEventItem) {
-                contentHolder.textViewTime.setVisibility(View.GONE);
-                contentHolder.textViewTitle.setText(R.string.no_event);
-            } else { // EventItem
-                contentHolder.textViewTime.setVisibility(View.VISIBLE);
-                if (eventItem.mIsAllDay) {
-                    contentHolder.textViewTime.setText(R.string.all_day);
-                } else {
-                    contentHolder.textViewTime.setText(CalendarUtils.toTimeString(
-                            contentHolder.textViewTime.getContext(),
-                            eventItem.mStartTimeMillis));
-                }
-                contentHolder.textViewTitle.setText(item.mTitle);
-            }
-            contentHolder.itemView.setOnClickListener(new View.OnClickListener() {
+            bindTime((EventItem) item, (ContentViewHolder) holder);
+            holder.itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    editEvent(v.getContext(), eventItem);
+                    editEvent(v.getContext(), (EventItem) item);
                 }
             });
         }
@@ -275,6 +260,41 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
     void unlockBinding() {
         mLock = false;
         notifyItemRangeChanged(0, getItemCount());
+    }
+
+    private void bindTitle(AdapterItem item, RowViewHolder holder) {
+        if (item instanceof EventGroup) {
+            ((GroupViewHolder) holder).textView.setText(item.mTitle);
+        } else if (item instanceof NoEventItem) {
+            ((ContentViewHolder) holder).textViewTitle.setText(R.string.no_event);
+        } else {
+            ((ContentViewHolder) holder).textViewTitle.setText(item.mTitle);
+        }
+    }
+
+    private void bindTime(EventItem eventItem, ContentViewHolder contentHolder) {
+        if (eventItem instanceof NoEventItem) {
+            contentHolder.textViewTime.setVisibility(View.GONE);
+            return;
+        }
+        contentHolder.textViewTime.setVisibility(View.VISIBLE);
+        Context context = contentHolder.textViewTime.getContext();
+        switch (eventItem.mDisplayType) {
+            case EventItem.DISPLAY_TYPE_ALL_DAY:
+                contentHolder.textViewTime.setText(R.string.all_day);
+                break;
+            case EventItem.DISPLAY_TYPE_START_TIME:
+            default:
+                contentHolder.textViewTime.setText(CalendarUtils.toTimeString(
+                        context, eventItem.mStartTimeMillis));
+                break;
+            case EventItem.DISPLAY_TYPE_END_TIME:
+                String endTimeString = CalendarUtils.toTimeString(
+                        context, eventItem.mEndTimeMillis);
+                contentHolder.textViewTime.setText(
+                        context.getString(R.string.end_time, endTimeString));
+                break;
+        }
     }
 
     private Pair<EventGroup, Integer> findGroup(long timeMillis) {
@@ -548,6 +568,11 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
     }
 
     static class EventItem extends AdapterItem {
+
+        static final int DISPLAY_TYPE_START_TIME = 0;
+        static final int DISPLAY_TYPE_ALL_DAY = 1;
+        static final int DISPLAY_TYPE_END_TIME = 2;
+
         public static Creator<EventItem> CREATOR = new Creator<EventItem>() {
             @Override
             public EventItem createFromParcel(Parcel source) {
@@ -559,11 +584,13 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
                 return new EventItem[size];
             }
         };
+
         long mId;
-        boolean mIsAllDay;
+        long mCalendarId;
         long mStartTimeMillis;
         long mEndTimeMillis;
-        long mCalendarId;
+        boolean mIsAllDay;
+        int mDisplayType = DISPLAY_TYPE_START_TIME;
 
         EventItem(long timeMillis, Cursor cursor) {
             super(cursor.getString(cursor.getColumnIndex(CalendarContract.Events.TITLE)), timeMillis);
@@ -577,6 +604,7 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
                 mStartTimeMillis = CalendarUtils.toLocalTimeZone(mStartTimeMillis);
                 mEndTimeMillis = CalendarUtils.toLocalTimeZone(mEndTimeMillis);
             }
+            setDisplayType();
         }
 
         EventItem(String title, long timeMillis) {
@@ -585,15 +613,38 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
 
         private EventItem(Parcel source) {
             super(source);
+            mId = source.readLong();
+            mCalendarId = source.readLong();
             mStartTimeMillis = source.readLong();
+            mEndTimeMillis = source.readLong();
             mIsAllDay = source.readInt() == 1;
+            mDisplayType = source.readInt();
         }
 
         @Override
         public void writeToParcel(Parcel dest, int flags) {
             super.writeToParcel(dest, flags);
+            dest.writeLong(mId);
+            dest.writeLong(mCalendarId);
             dest.writeLong(mStartTimeMillis);
+            dest.writeLong(mEndTimeMillis);
             dest.writeInt(mIsAllDay ? 1 : 0);
+            dest.writeInt(mDisplayType);
+        }
+
+        private void setDisplayType() {
+            if (mIsAllDay) {
+                mDisplayType = DISPLAY_TYPE_ALL_DAY;
+            } else if (mStartTimeMillis >= mTimeMillis) {
+                // start within agenda date
+                mDisplayType = DISPLAY_TYPE_START_TIME;
+            } else if (mEndTimeMillis < mTimeMillis + DateUtils.DAY_IN_MILLIS) {
+                // start before, end within agenda date
+                mDisplayType = DISPLAY_TYPE_END_TIME;
+            } else {
+                // start before, end after agenda date
+                mDisplayType = DISPLAY_TYPE_ALL_DAY;
+            }
         }
     }
 

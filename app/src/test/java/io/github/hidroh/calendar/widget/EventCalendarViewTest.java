@@ -189,7 +189,7 @@ public class EventCalendarViewTest {
     public void testBindCursor() {
         // setting calendar adapter should load and bind cursor
         TestCursor cursor = new TestCursor();
-        cursor.addRow(new Object[]{"Event 1", todayMillis, todayMillis, 0});
+        cursor.addRow(new Object[]{1L, 1L, "Event 1", todayMillis, todayMillis, 0});
         TestCalendarAdapter testAdapter = new TestCalendarAdapter();
         testAdapter.cursor = cursor;
         calendarView.setCalendarAdapter(testAdapter);
@@ -206,7 +206,7 @@ public class EventCalendarViewTest {
     public void testCursorContentChange() {
         // setting calendar adapter should load and bind cursor
         TestCursor cursor = new TestCursor();
-        cursor.addRow(new Object[]{"Event 1", todayMillis, todayMillis, 0});
+        cursor.addRow(new Object[]{1L, 1L, "Event 1", todayMillis, todayMillis, 0});
         TestCalendarAdapter testAdapter = new TestCalendarAdapter();
         testAdapter.cursor = cursor;
         calendarView.setCalendarAdapter(testAdapter);

@@ -21,6 +21,7 @@ import org.robolectric.util.ActivityController;
 
 import java.text.DateFormatSymbols;
 import java.util.Calendar;
+import java.util.TimeZone;
 
 import io.github.hidroh.calendar.CalendarUtils;
 import io.github.hidroh.calendar.R;
@@ -127,15 +128,17 @@ public class MonthViewTest {
 
     @Test
     public void testSwapCursor() {
+        TimeZone defaultTimeZone = TimeZone.getDefault();
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
         TestCursor cursor = new TestCursor();
         long day14 = createDayMillis(2016, Calendar.MARCH, 14),
                 day15 = createDayMillis(2016, Calendar.MARCH, 15),
                 day17 = createDayMillis(2016, Calendar.MARCH, 17),
                 day20 = createDayMillis(2016, Calendar.MARCH, 20),
                 day21 = createDayMillis(2016, Calendar.MARCH, 21);
-        cursor.addRow(new Object[]{"Event 1", day14, day17, 0}); // multi day
-        cursor.addRow(new Object[]{"Event 1", day15, day15, 0}); // single day
-        cursor.addRow(new Object[]{"Event 1", day20, day21, 1}); // all day
+        cursor.addRow(new Object[]{1L, 1L, "Event 1", day14, day17, 0}); // multi day
+        cursor.addRow(new Object[]{1L, 1L, "Event 1", day15, day15, 0}); // single day
+        cursor.addRow(new Object[]{1L, 1L, "Event 1", day20, day21, 1}); // all day
         monthView.swapCursor(cursor);
         assertThat(adapter.mEvents)
                 .hasSize(5)
@@ -149,7 +152,7 @@ public class MonthViewTest {
 
         // swapping new cursor should rebind existing events
         TestCursor updatedCursor = new TestCursor();
-        updatedCursor.addRow(new Object[]{"Event 1", day20, day21, 1}); // all day
+        updatedCursor.addRow(new Object[]{1L, 1L, "Event 1", day20, day21, 1}); // all day
         monthView.swapCursor(updatedCursor);
         assertThat(adapter.mEvents)
                 .hasSize(1)
@@ -159,6 +162,7 @@ public class MonthViewTest {
         TestCursor emptyCursor = new TestCursor();
         monthView.swapCursor(emptyCursor);
         assertThat(adapter.mEvents).isEmpty();
+        TimeZone.setDefault(defaultTimeZone);
     }
 
     @Test
@@ -172,7 +176,7 @@ public class MonthViewTest {
         // swapping cursor should decorate it
         TestCursor cursor = new TestCursor();
         long day2 = createDayMillis(2016, Calendar.MARCH, 2);
-        cursor.addRow(new Object[]{"Event 1", day2, day2, 0});
+        cursor.addRow(new Object[]{1L, 1L, "Event 1", day2, day2, 0});
         monthView.swapCursor(cursor);
         actual = ((TextView) createBindViewHolder(10).itemView).getText(); // 02-March-2016
         assertThat(actual).isInstanceOf(SpannableString.class);

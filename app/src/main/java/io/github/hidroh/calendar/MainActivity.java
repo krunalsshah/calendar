@@ -1,14 +1,12 @@
 package io.github.hidroh.calendar;
 
 import android.Manifest;
-import android.content.AsyncQueryHandler;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.os.Bundle;
-import android.provider.CalendarContract;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
@@ -25,6 +23,7 @@ import android.view.View;
 import android.widget.CheckedTextView;
 import android.widget.TextView;
 
+import io.github.hidroh.calendar.content.EventsQueryHandler;
 import io.github.hidroh.calendar.widget.AgendaAdapter;
 import io.github.hidroh.calendar.widget.AgendaView;
 import io.github.hidroh.calendar.widget.EventCalendarView;
@@ -34,14 +33,6 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String STATE_TOOLBAR_TOGGLE = "state:toolbarToggle";
     private static final String STATE_EMPTY_VISIBLE = "state:emptyVisible";
-    private static final String[] EVENTS_PROJECTION = new String[]{
-            CalendarContract.Events._ID,
-            CalendarContract.Events.CALENDAR_ID,
-            CalendarContract.Events.DTSTART,
-            CalendarContract.Events.DTEND,
-            CalendarContract.Events.ALL_DAY,
-            CalendarContract.Events.TITLE
-    };
 
     private final Coordinator mCoordinator = new Coordinator();
     private CheckedTextView mToolbarToggle;
@@ -371,32 +362,6 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onQueryComplete(int token, Object cookie, Cursor cursor) {
             mAdapter.bindEvents((Long) cookie, cursor);
-        }
-    }
-
-    static abstract class EventsQueryHandler extends AsyncQueryHandler {
-
-        public EventsQueryHandler(ContentResolver cr) {
-            super(cr);
-        }
-
-        protected final void startQuery(Object cookie, long startTimeMillis, long endTimeMillis) {
-            startQuery(0, cookie,
-                    CalendarContract.Events.CONTENT_URI,
-                    EVENTS_PROJECTION,
-                    "(" + CalendarContract.Events.DTSTART + ">=? AND " +
-                            CalendarContract.Events.DTSTART + "<?) OR (" +
-                            CalendarContract.Events.DTSTART + "<? AND " +
-                            CalendarContract.Events.DTEND + ">=?) AND " +
-                            CalendarContract.Events.DELETED + "=?",
-                    new String[]{
-                            String.valueOf(startTimeMillis),
-                            String.valueOf(endTimeMillis),
-                            String.valueOf(startTimeMillis),
-                            String.valueOf(endTimeMillis),
-                            "0"
-                    },
-                    CalendarContract.Events.DTSTART + " ASC");
         }
     }
 }

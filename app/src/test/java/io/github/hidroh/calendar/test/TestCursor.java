@@ -2,16 +2,14 @@ package io.github.hidroh.calendar.test;
 
 import android.database.ContentObserver;
 import android.database.MatrixCursor;
-import android.provider.CalendarContract;
+
+import io.github.hidroh.calendar.content.EventsQueryHandler;
 
 public class TestCursor extends MatrixCursor {
     private ContentObserver contentObserver;
 
     public TestCursor() {
-        super(new String[]{CalendarContract.Events.TITLE,
-                CalendarContract.Events.DTSTART,
-                CalendarContract.Events.DTEND,
-                CalendarContract.Events.ALL_DAY});
+        super(EventsQueryHandler.PROJECTION);
     }
 
     @Override
