@@ -75,8 +75,8 @@ public class AgendaView extends RecyclerView {
 
     @Override
     public void onScrolled(int dx, int dy) {
-        loadMore();
-        if (dy != 0) { // avoid triggering notification on 1st layout
+        if (dy != 0) { // avoid loading more or triggering notification on 1st layout
+            loadMore();
             notifyDateChange();
         }
     }
@@ -85,11 +85,8 @@ public class AgendaView extends RecyclerView {
     public void onScrollStateChanged(int state) {
         super.onScrollStateChanged(state);
         if (state == SCROLL_STATE_IDLE && mPendingScrollPosition != NO_POSITION) {
-            if (mPendingScrollPosition == getLinearLayoutManager()
-                    .findFirstVisibleItemPosition()) {
-                mPendingScrollPosition = NO_POSITION; // clear pending
-                mAdapter.unlockBinding();
-            }
+            mPendingScrollPosition = NO_POSITION; // clear pending
+            mAdapter.unlockBinding();
         }
     }
 
@@ -104,8 +101,8 @@ public class AgendaView extends RecyclerView {
                 mAdapter.restoreState(mAdapterSavedState);
                 mAdapterSavedState = null;
             } else {
-                // TODO 1st layout after permission granted does not refresh views
                 mAdapter.append(getContext());
+                getLinearLayoutManager().scrollToPosition(mAdapter.getItemCount() / 2);
             }
         }
         super.setAdapter(mAdapter);
@@ -144,14 +141,13 @@ public class AgendaView extends RecyclerView {
         mPrevTimeMillis = CalendarUtils.NO_TIME_MILLIS;
         mAdapterSavedState = null;
         if (mAdapter != null) {
-            // clear previous adapter data
-            int originalItemCount = mAdapter.getItemCount();
+            int originalCount = mAdapter.getItemCount();
+            mAdapter.lockBinding();
             mAdapter.deactivate();
-            mAdapter.notifyItemRangeRemoved(0, originalItemCount);
-            // generate new adapter data
+            mAdapter.notifyItemRangeRemoved(0, originalCount);
             mAdapter.append(getContext());
             mAdapter.notifyItemRangeInserted(0, mAdapter.getItemCount());
-            scrollBy(0, 0); // TODO should not have to explicitly trigger layout
+            setSelectedDay(CalendarUtils.today());
         }
     }
 

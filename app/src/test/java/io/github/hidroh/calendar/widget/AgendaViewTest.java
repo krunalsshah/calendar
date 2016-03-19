@@ -49,6 +49,8 @@ public class AgendaViewTest {
     private AgendaView agendaView;
     private AgendaAdapter adapter;
     private final long todayMillis = CalendarUtils.today();
+    private final long firstDayMillis = todayMillis -
+            DateUtils.DAY_IN_MILLIS * AgendaAdapter.BLOCK_SIZE;
     private final long lastDayMillis = todayMillis +
             DateUtils.DAY_IN_MILLIS * (AgendaAdapter.BLOCK_SIZE - 1);
     private LinearLayoutManager layoutManager;
@@ -64,19 +66,21 @@ public class AgendaViewTest {
 
     @Test
     public void testInitialLayout() {
-        // initial layout should have 1 block of 31 days (each with group + placeholder)
-        assertThat(adapter.getItemCount()).isEqualTo(AgendaAdapter.BLOCK_SIZE * 2);
+        // initial layout should have 2 blocks of BLOCK_SIZE (each with group + placeholder)
+        assertThat(adapter.getItemCount()).isEqualTo(AgendaAdapter.BLOCK_SIZE * 2 * 2);
         // first visible item should be today by default
-        assertHasDate(createBindViewHolder(0), todayMillis);
+        assertHasDate(createBindViewHolder(layoutManager.findFirstVisibleItemPosition()),
+                todayMillis);
         assertThat((TextView) createBindViewHolder(1).itemView.findViewById(R.id.text_view_title))
                 .hasText(R.string.no_event);
     }
 
     @Test
     public void testPrepend() {
-        assertHasDate(createBindViewHolder(0), todayMillis);
+        assertHasDate(createBindViewHolder(layoutManager.findFirstVisibleItemPosition()),
+                todayMillis);
         agendaView.smoothScrollToPosition(0);
-        assertHasDate(createBindViewHolder(0), todayMillis -
+        assertHasDate(createBindViewHolder(0), firstDayMillis -
                 DateUtils.DAY_IN_MILLIS * AgendaAdapter.BLOCK_SIZE);
     }
 
@@ -119,7 +123,8 @@ public class AgendaViewTest {
     @Test
     public void testChangeSelectedDay() {
         long tomorrowMillis = todayMillis + DateUtils.DAY_IN_MILLIS;
-        assertHasDate(createBindViewHolder(0), todayMillis);
+        assertHasDate(createBindViewHolder(layoutManager.findFirstVisibleItemPosition()),
+                todayMillis);
         agendaView.setSelectedDay(tomorrowMillis);
         assertHasDate(createBindViewHolder(layoutManager.findFirstVisibleItemPosition()),
                 tomorrowMillis);
@@ -127,19 +132,21 @@ public class AgendaViewTest {
 
     @Test
     public void testPrependSelectedDay() {
-        long beforeFirstDayMillis = todayMillis - DateUtils.DAY_IN_MILLIS;
-        assertHasDate(createBindViewHolder(0), todayMillis);
+        long beforeFirstDayMillis = firstDayMillis - DateUtils.DAY_IN_MILLIS;
+        assertHasDate(createBindViewHolder(layoutManager.findFirstVisibleItemPosition()),
+                todayMillis);
         agendaView.setSelectedDay(beforeFirstDayMillis);
         assertHasDate(createBindViewHolder(layoutManager.findFirstVisibleItemPosition()),
                 beforeFirstDayMillis);
-        assertHasDate(createBindViewHolder(0), todayMillis -
+        assertHasDate(createBindViewHolder(0), firstDayMillis -
                 DateUtils.DAY_IN_MILLIS * AgendaAdapter.BLOCK_SIZE);
     }
 
     @Test
     public void testAppendSelectedDay() {
         long afterLastDayMillis = lastDayMillis + DateUtils.DAY_IN_MILLIS;
-        assertHasDate(createBindViewHolder(0), todayMillis);
+        assertHasDate(createBindViewHolder(layoutManager.findFirstVisibleItemPosition()),
+                todayMillis);
         agendaView.setSelectedDay(afterLastDayMillis);
         assertHasDate(createBindViewHolder(layoutManager.findFirstVisibleItemPosition()),
                 afterLastDayMillis);
@@ -185,20 +192,21 @@ public class AgendaViewTest {
                 .hasTextString(R.string.no_event);
 
         // trigger cursor loading and binding
+        long groupTime = firstDayMillis;
         TestEventCursor cursor = new TestEventCursor();
-        cursor.addRow(new Object[]{1L, 1L, "Event 1", todayMillis + 28800000, todayMillis + 28800000, 0}); // 8AM UTC
-        cursor.addRow(new Object[]{1L, 1L, "Event 2", todayMillis, todayMillis, 1}); // all day
+        cursor.addRow(new Object[]{1L, 1L, "Event 1", groupTime + 28800000, groupTime + 28800000, 0}); // 8AM UTC
+        cursor.addRow(new Object[]{1L, 1L, "Event 2", groupTime, groupTime, 1}); // all day
         cursor.addRow(new Object[]{1L, 1L, "Event 3",
-                todayMillis -  DateUtils.DAY_IN_MILLIS * 2, todayMillis, 0}); // multi day, end today
-        cursor.addRow(new Object[]{1L, 1L, "Event 4", todayMillis -  DateUtils.DAY_IN_MILLIS,
-                todayMillis + DateUtils.DAY_IN_MILLIS, 0}); // multi day, end tomorrow
-        activity.cursors.put(todayMillis, cursor);
+                groupTime -  DateUtils.DAY_IN_MILLIS * 2, groupTime, 0}); // multi day, end today
+        cursor.addRow(new Object[]{1L, 1L, "Event 4", groupTime -  DateUtils.DAY_IN_MILLIS,
+                groupTime + DateUtils.DAY_IN_MILLIS, 0}); // multi day, end tomorrow
+        activity.cursors.put(groupTime, cursor);
         createBindViewHolder(0);
 
         // non empty cursor should replace placeholder and add extra item
         View item1 = createBindViewHolder(1).itemView;
         assertThat((TextView) item1.findViewById(R.id.text_view_time))
-                .hasTextString(CalendarUtils.toTimeString(activity, todayMillis + 28800000));
+                .hasTextString(CalendarUtils.toTimeString(activity, groupTime + 28800000));
         assertThat((TextView) item1.findViewById(R.id.text_view_title))
                 .hasTextString("Event 1");
         View item2 = createBindViewHolder(2).itemView;
@@ -209,7 +217,7 @@ public class AgendaViewTest {
         View item3 = createBindViewHolder(3).itemView;
         assertThat((TextView) item3.findViewById(R.id.text_view_time))
                 .hasTextString(activity.getString(R.string.end_time,
-                        CalendarUtils.toTimeString(activity, todayMillis)));
+                        CalendarUtils.toTimeString(activity, groupTime)));
         assertThat((TextView) item3.findViewById(R.id.text_view_title))
                 .hasTextString("Event 3");
         View item4 = createBindViewHolder(4).itemView;
@@ -231,8 +239,9 @@ public class AgendaViewTest {
                 .hasTextString(R.string.no_event);
 
         // trigger cursor loading and binding
+        long groupTime = firstDayMillis;
         TestEventCursor noEventCursor = new TestEventCursor();
-        activity.cursors.put(todayMillis, noEventCursor);
+        activity.cursors.put(groupTime, noEventCursor);
         createBindViewHolder(0);
 
         // bind empty cursor should not replace placeholder
@@ -241,9 +250,9 @@ public class AgendaViewTest {
 
         // trigger content change notification
         TestEventCursor multiEventCursor = new TestEventCursor();
-        multiEventCursor.addRow(new Object[]{1L, 1L, "Event 1", todayMillis + 1000, todayMillis + 1000, 0});
-        multiEventCursor.addRow(new Object[]{1L, 1L, "Event 2", todayMillis + 2000, todayMillis + 2000, 0});
-        activity.cursors.put(todayMillis, multiEventCursor);
+        multiEventCursor.addRow(new Object[]{1L, 1L, "Event 1", groupTime + 1000, groupTime + 1000, 0});
+        multiEventCursor.addRow(new Object[]{1L, 1L, "Event 2", groupTime + 2000, groupTime + 2000, 0});
+        activity.cursors.put(groupTime, multiEventCursor);
         noEventCursor.notifyContentChange(false);
 
         // content change should deactivate prev cursor, update placeholder and add extra item
@@ -255,15 +264,15 @@ public class AgendaViewTest {
 
         // trigger content change notification
         TestEventCursor singleEventCursor = new TestEventCursor();
-        singleEventCursor.addRow(new Object[]{1L, 1L, "Event 3", todayMillis + 3000, todayMillis + 3000, 0});
-        activity.cursors.put(todayMillis, singleEventCursor);
+        singleEventCursor.addRow(new Object[]{1L, 1L, "Event 3", groupTime + 3000, groupTime + 3000, 0});
+        activity.cursors.put(groupTime, singleEventCursor);
         multiEventCursor.notifyContentChange(false);
 
         // content change should deactivate prev cursor, update existing item, remove deleted item
         assertThat(multiEventCursor).isClosed();
         assertThat((TextView) createBindViewHolder(1).itemView.findViewById(R.id.text_view_title))
                 .hasTextString("Event 3");
-        assertHasDate(createBindViewHolder(2), todayMillis + DateUtils.DAY_IN_MILLIS);
+        assertHasDate(createBindViewHolder(2), groupTime + DateUtils.DAY_IN_MILLIS);
     }
 
     @Test
