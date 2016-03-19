@@ -1,7 +1,6 @@
 package io.github.hidroh.calendar.widget;
 
 import android.database.ContentObserver;
-import android.database.Cursor;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.annotation.Nullable;
@@ -16,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.github.hidroh.calendar.CalendarUtils;
+import io.github.hidroh.calendar.content.EventCursor;
 
 /**
  * A circular {@link PagerAdapter}, with a view pool of 5 items:
@@ -34,8 +34,9 @@ class MonthViewPagerAdapter extends PagerAdapter {
     @VisibleForTesting long mSelectedDayMillis = CalendarUtils.today();
     private final List<Long> mMonths = new ArrayList<>(getCount());
     private final MonthView.OnDateChangeListener mListener;
-    private final List<Cursor> mCursors = new ArrayList<>(getCount());
-    private final ArrayMap<Cursor, ContentObserver> mObservers = new ArrayMap<>(getCount());
+    private final List<EventCursor> mCursors = new ArrayList<>(getCount());
+    private final ArrayMap<EventCursor, ContentObserver> mObservers =
+            new ArrayMap<>(getCount());
 
     public MonthViewPagerAdapter(MonthView.OnDateChangeListener listener) {
         mListener = listener;
@@ -177,10 +178,10 @@ class MonthViewPagerAdapter extends PagerAdapter {
     /**
      * Gets cursor for calendar events at given position
      * @param position    adapter position
-     * @return  {@link android.provider.CalendarContract.Events} cursor or null
-     * @see {@link #swapCursor(long, Cursor, ContentObserver)}
+     * @return  {@link android.provider.CalendarContract.Events} cursor wrapper or null
+     * @see {@link #swapCursor(long, EventCursor, ContentObserver)}
      */
-    Cursor getCursor(int position) {
+    EventCursor getCursor(int position) {
         return mCursors.get(position);
     }
 
@@ -188,10 +189,11 @@ class MonthViewPagerAdapter extends PagerAdapter {
      * Swaps cursor for calendar events for given month
      * Closes previously bound cursor, unregisters observer if any
      * @param monthMillis       month in milliseconds
-     * @param cursor            {@link android.provider.CalendarContract.Events} cursor or null
+     * @param cursor            {@link android.provider.CalendarContract.Events} cursor wrapper or null
      * @param contentObserver   content observer for given cursor
      */
-    void swapCursor(long monthMillis, @Nullable Cursor cursor, ContentObserver contentObserver) {
+    void swapCursor(long monthMillis, @Nullable EventCursor cursor,
+                    ContentObserver contentObserver) {
         for (int i = 0; i < mMonths.size(); i++) {
             if (CalendarUtils.sameMonth(monthMillis, mMonths.get(i))) {
                 swapCursor(i, cursor, contentObserver);
@@ -204,7 +206,7 @@ class MonthViewPagerAdapter extends PagerAdapter {
      * Deactivates all previously bound cursors and unregisters their observers
      */
     void deactivate() {
-        for (Cursor cursor : mCursors) {
+        for (EventCursor cursor : mCursors) {
             deactivate(cursor);
         }
     }
@@ -215,7 +217,8 @@ class MonthViewPagerAdapter extends PagerAdapter {
         }
     }
 
-    private void swapCursor(int position, @Nullable Cursor cursor, ContentObserver contentObserver) {
+    private void swapCursor(int position, @Nullable EventCursor cursor,
+                            ContentObserver contentObserver) {
         deactivate(mCursors.get(position));
         if (cursor != null) {
             cursor.registerContentObserver(contentObserver);
@@ -231,7 +234,7 @@ class MonthViewPagerAdapter extends PagerAdapter {
         }
     }
 
-    private void deactivate(Cursor cursor) {
+    private void deactivate(EventCursor cursor) {
         if (cursor != null) {
             cursor.unregisterContentObserver(mObservers.get(cursor));
             mObservers.remove(cursor);

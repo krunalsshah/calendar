@@ -25,7 +25,7 @@ import java.util.TimeZone;
 
 import io.github.hidroh.calendar.CalendarUtils;
 import io.github.hidroh.calendar.R;
-import io.github.hidroh.calendar.test.TestCursor;
+import io.github.hidroh.calendar.test.TestEventCursor;
 import io.github.hidroh.calendar.test.shadows.ShadowViewHolder;
 import io.github.hidroh.calendar.text.style.CircleSpan;
 import io.github.hidroh.calendar.text.style.UnderDotSpan;
@@ -130,7 +130,7 @@ public class MonthViewTest {
     public void testSwapCursor() {
         TimeZone defaultTimeZone = TimeZone.getDefault();
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
-        TestCursor cursor = new TestCursor();
+        TestEventCursor cursor = new TestEventCursor();
         long day14 = createDayMillis(2016, Calendar.MARCH, 14),
                 day15 = createDayMillis(2016, Calendar.MARCH, 15),
                 day17 = createDayMillis(2016, Calendar.MARCH, 17),
@@ -151,7 +151,7 @@ public class MonthViewTest {
                 .contains(13, 14, 15, 16, 19);
 
         // swapping new cursor should rebind existing events
-        TestCursor updatedCursor = new TestCursor();
+        TestEventCursor updatedCursor = new TestEventCursor();
         updatedCursor.addRow(new Object[]{1L, 1L, "Event 1", day20, day21, 1}); // all day
         monthView.swapCursor(updatedCursor);
         assertThat(adapter.mEvents)
@@ -159,7 +159,7 @@ public class MonthViewTest {
                 .contains(19);
 
         // swapping empty cursor should clear all existing events
-        TestCursor emptyCursor = new TestCursor();
+        TestEventCursor emptyCursor = new TestEventCursor();
         monthView.swapCursor(emptyCursor);
         assertThat(adapter.mEvents).isEmpty();
         TimeZone.setDefault(defaultTimeZone);
@@ -174,7 +174,7 @@ public class MonthViewTest {
         assertThat((SpannableString) actual).doesNotHaveSpan(UnderDotSpan.class);
 
         // swapping cursor should decorate it
-        TestCursor cursor = new TestCursor();
+        TestEventCursor cursor = new TestEventCursor();
         long day2 = createDayMillis(2016, Calendar.MARCH, 2);
         cursor.addRow(new Object[]{1L, 1L, "Event 1", day2, day2, 0});
         monthView.swapCursor(cursor);

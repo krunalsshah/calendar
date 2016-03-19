@@ -4,7 +4,6 @@ import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.database.Cursor;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.provider.CalendarContract;
@@ -29,6 +28,7 @@ import java.util.TimeZone;
 
 import io.github.hidroh.calendar.CalendarUtils;
 import io.github.hidroh.calendar.R;
+import io.github.hidroh.calendar.content.CalendarCursor;
 
 public class EventEditView extends RelativeLayout {
 
@@ -41,7 +41,7 @@ public class EventEditView extends RelativeLayout {
     private final TextView mTextViewEndTime;
     private final TextView mTextViewCalendar;
     private Event mEvent = Event.createInstance();
-    private Cursor mCursor;
+    private CalendarCursor mCursor;
 
     public EventEditView(Context context) {
         this(context, null);
@@ -87,7 +87,7 @@ public class EventEditView extends RelativeLayout {
         return mEvent;
     }
 
-    public void swapCalendarSource(Cursor cursor) {
+    public void swapCalendarSource(CalendarCursor cursor) {
         mCursor = cursor;
         mTextViewCalendar.setEnabled(mCursor != null && mCursor.getCount() > 0);
     }
@@ -185,10 +185,8 @@ public class EventEditView extends RelativeLayout {
 
     private void changeCalendar(int selection) {
         mCursor.moveToPosition(selection);
-        mEvent.calendarId = mCursor.getLong(mCursor.getColumnIndex(
-                CalendarContract.Calendars._ID));
-        mTextViewCalendar.setText(mCursor.getString(mCursor.getColumnIndex(
-                CalendarContract.Calendars.CALENDAR_DISPLAY_NAME)));
+        mEvent.calendarId = mCursor.getId();
+        mTextViewCalendar.setText(mCursor.getDisplayName());
     }
 
     private void ensureValidDates(boolean startDateChanged) {

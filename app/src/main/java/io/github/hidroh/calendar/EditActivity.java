@@ -21,6 +21,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
 
+import io.github.hidroh.calendar.content.CalendarCursor;
 import io.github.hidroh.calendar.widget.EventEditView;
 
 public class EditActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
@@ -125,10 +126,7 @@ public class EditActivity extends AppCompatActivity implements LoaderManager.Loa
             selectionArgs = new String[]{String.valueOf(args.getLong(EXTRA_CALENDAR_ID))};
         }
         return new CursorLoader(this, CalendarContract.Calendars.CONTENT_URI,
-                new String[]{
-                        CalendarContract.Calendars._ID,
-                        CalendarContract.Calendars.CALENDAR_DISPLAY_NAME
-                },
+                CalendarCursor.PROJECTION,
                 selection, selectionArgs,
                 CalendarContract.Calendars.DEFAULT_SORT_ORDER);
 
@@ -137,10 +135,9 @@ public class EditActivity extends AppCompatActivity implements LoaderManager.Loa
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
         if (loader.getId() == LOADER_CALENDARS) {
-            mEventEditView.swapCalendarSource(data);
+            mEventEditView.swapCalendarSource(new CalendarCursor(data));
         } else if (data != null && data.moveToFirst()) {
-            mEventEditView.setSelectedCalendar(data.getString(data.getColumnIndex(
-                    CalendarContract.Calendars.CALENDAR_DISPLAY_NAME)));
+            mEventEditView.setSelectedCalendar(new CalendarCursor(data).getDisplayName());
         }
     }
 

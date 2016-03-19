@@ -2,20 +2,13 @@ package io.github.hidroh.calendar.content;
 
 import android.content.AsyncQueryHandler;
 import android.content.ContentResolver;
+import android.database.Cursor;
 import android.provider.CalendarContract;
 
 import io.github.hidroh.calendar.CalendarUtils;
 
 public abstract class EventsQueryHandler extends AsyncQueryHandler {
 
-    public static final String[] PROJECTION = new String[]{
-            CalendarContract.Events._ID,
-            CalendarContract.Events.CALENDAR_ID,
-            CalendarContract.Events.TITLE,
-            CalendarContract.Events.DTSTART,
-            CalendarContract.Events.DTEND,
-            CalendarContract.Events.ALL_DAY
-    };
     private static final String SORT = CalendarContract.Events.DTSTART + " ASC";
     private static final String AND = " AND ";
     private static final String OR = " OR ";
@@ -69,6 +62,14 @@ public abstract class EventsQueryHandler extends AsyncQueryHandler {
                 utcStart,
                 utcStart
         };
-        startQuery(0, cookie, CalendarContract.Events.CONTENT_URI, PROJECTION, SELECTION, args, SORT);
+        startQuery(0, cookie, CalendarContract.Events.CONTENT_URI,
+                EventCursor.PROJECTION, SELECTION, args, SORT);
     }
+
+    @Override
+    protected final void onQueryComplete(int token, Object cookie, Cursor cursor) {
+        handleQueryComplete(token, cookie, new EventCursor(cursor));
+    }
+
+    protected abstract void handleQueryComplete(int token, Object cookie, EventCursor cursor);
 }

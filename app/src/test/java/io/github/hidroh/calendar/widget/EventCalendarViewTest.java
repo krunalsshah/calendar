@@ -19,7 +19,7 @@ import org.robolectric.util.ActivityController;
 
 import io.github.hidroh.calendar.CalendarUtils;
 import io.github.hidroh.calendar.R;
-import io.github.hidroh.calendar.test.TestCursor;
+import io.github.hidroh.calendar.test.TestEventCursor;
 import io.github.hidroh.calendar.test.shadows.ShadowViewPager;
 
 import static io.github.hidroh.calendar.test.assertions.DayTimeAssert.assertThat;
@@ -188,7 +188,7 @@ public class EventCalendarViewTest {
     @Test
     public void testBindCursor() {
         // setting calendar adapter should load and bind cursor
-        TestCursor cursor = new TestCursor();
+        TestEventCursor cursor = new TestEventCursor();
         cursor.addRow(new Object[]{1L, 1L, "Event 1", todayMillis, todayMillis, 0});
         TestCalendarAdapter testAdapter = new TestCalendarAdapter();
         testAdapter.cursor = cursor;
@@ -205,7 +205,7 @@ public class EventCalendarViewTest {
     @Test
     public void testCursorContentChange() {
         // setting calendar adapter should load and bind cursor
-        TestCursor cursor = new TestCursor();
+        TestEventCursor cursor = new TestEventCursor();
         cursor.addRow(new Object[]{1L, 1L, "Event 1", todayMillis, todayMillis, 0});
         TestCalendarAdapter testAdapter = new TestCalendarAdapter();
         testAdapter.cursor = cursor;
@@ -214,7 +214,7 @@ public class EventCalendarViewTest {
         assertTrue(cursor.hasContentObserver());
 
         // content change should load and bind new cursor, deactivate existing cursor
-        TestCursor updatedCursor = new TestCursor();
+        TestEventCursor updatedCursor = new TestEventCursor();
         testAdapter.cursor = updatedCursor;
         cursor.notifyContentChange(false);
         assertThat(cursor).isClosed();
@@ -251,7 +251,7 @@ public class EventCalendarViewTest {
     }
 
     static class TestCalendarAdapter extends EventCalendarView.CalendarAdapter {
-        TestCursor cursor = new TestCursor();
+        TestEventCursor cursor = new TestEventCursor();
 
         @Override
         protected void loadEvents(long monthMillis) {

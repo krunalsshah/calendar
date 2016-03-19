@@ -27,7 +27,7 @@ import org.robolectric.util.ActivityController;
 
 import java.util.Arrays;
 
-import io.github.hidroh.calendar.content.EventsQueryHandler;
+import io.github.hidroh.calendar.content.EventCursor;
 import io.github.hidroh.calendar.test.shadows.ShadowLinearLayoutManager;
 import io.github.hidroh.calendar.test.shadows.ShadowRecyclerView;
 import io.github.hidroh.calendar.test.shadows.ShadowViewPager;
@@ -217,7 +217,7 @@ public class MainActivityTest {
 
     static class TestRoboCursor extends RoboCursor {
         public TestRoboCursor() {
-            setColumnNames(Arrays.asList(EventsQueryHandler.PROJECTION));
+            setColumnNames(Arrays.asList(EventCursor.PROJECTION));
         }
 
         @Override

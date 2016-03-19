@@ -1,6 +1,5 @@
 package io.github.hidroh.calendar.widget;
 
-import android.database.Cursor;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.annotation.Nullable;
@@ -27,7 +26,8 @@ import org.robolectric.util.ActivityController;
 
 import io.github.hidroh.calendar.CalendarUtils;
 import io.github.hidroh.calendar.R;
-import io.github.hidroh.calendar.test.TestCursor;
+import io.github.hidroh.calendar.content.EventCursor;
+import io.github.hidroh.calendar.test.TestEventCursor;
 import io.github.hidroh.calendar.test.shadows.ShadowLinearLayoutManager;
 import io.github.hidroh.calendar.test.shadows.ShadowRecyclerView;
 
@@ -170,7 +170,7 @@ public class AgendaViewTest {
                 .hasTextString(R.string.no_event);
 
         // bind empty cursor should not replace placeholder
-        TestCursor cursor = new TestCursor();
+        TestEventCursor cursor = new TestEventCursor();
         adapter.bindEvents(todayMillis, cursor);
         assertThat((TextView) createBindViewHolder(1).itemView.findViewById(R.id.text_view_title))
                 .hasTextString(R.string.no_event);
@@ -183,7 +183,7 @@ public class AgendaViewTest {
                 .hasTextString(R.string.no_event);
 
         // trigger cursor loading and binding
-        TestCursor cursor = new TestCursor();
+        TestEventCursor cursor = new TestEventCursor();
         cursor.addRow(new Object[]{1L, 1L, "Event 1", todayMillis + 28800000, todayMillis + 28800000, 0}); // 8AM UTC
         cursor.addRow(new Object[]{1L, 1L, "Event 2", todayMillis, todayMillis, 1}); // all day
         activity.cursors.put(todayMillis, cursor);
@@ -214,7 +214,7 @@ public class AgendaViewTest {
                 .hasTextString(R.string.no_event);
 
         // trigger cursor loading and binding
-        TestCursor noEventCursor = new TestCursor();
+        TestEventCursor noEventCursor = new TestEventCursor();
         activity.cursors.put(todayMillis, noEventCursor);
         createBindViewHolder(0);
 
@@ -223,7 +223,7 @@ public class AgendaViewTest {
                 .hasTextString(R.string.no_event);
 
         // trigger content change notification
-        TestCursor multiEventCursor = new TestCursor();
+        TestEventCursor multiEventCursor = new TestEventCursor();
         multiEventCursor.addRow(new Object[]{1L, 1L, "Event 1", todayMillis + 1000, todayMillis + 1000, 0});
         multiEventCursor.addRow(new Object[]{1L, 1L, "Event 2", todayMillis + 2000, todayMillis + 2000, 0});
         activity.cursors.put(todayMillis, multiEventCursor);
@@ -237,7 +237,7 @@ public class AgendaViewTest {
                 .hasTextString("Event 2");
 
         // trigger content change notification
-        TestCursor singleEventCursor = new TestCursor();
+        TestEventCursor singleEventCursor = new TestEventCursor();
         singleEventCursor.addRow(new Object[]{1L, 1L, "Event 3", todayMillis + 3000, todayMillis + 3000, 0});
         activity.cursors.put(todayMillis, singleEventCursor);
         multiEventCursor.notifyContentChange(false);
@@ -279,7 +279,7 @@ public class AgendaViewTest {
     }
 
     static class TestActivity extends AppCompatActivity {
-        LongSparseArray<Cursor> cursors = new LongSparseArray<>();
+        LongSparseArray<EventCursor> cursors = new LongSparseArray<>();
 
         @Override
         protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -293,7 +293,7 @@ public class AgendaViewTest {
                 @Override
                 protected void loadEvents(long timeMillis) {
                     bindEvents(timeMillis, cursors.get(timeMillis) != null ?
-                            cursors.get(timeMillis) : new TestCursor());
+                            cursors.get(timeMillis) : new TestEventCursor());
                 }
             });
         }

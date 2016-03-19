@@ -3,7 +3,6 @@ package io.github.hidroh.calendar.widget;
 import android.content.Context;
 import android.content.Intent;
 import android.database.ContentObserver;
-import android.database.Cursor;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Parcel;
@@ -25,6 +24,7 @@ import java.util.Collection;
 import io.github.hidroh.calendar.CalendarUtils;
 import io.github.hidroh.calendar.EditActivity;
 import io.github.hidroh.calendar.R;
+import io.github.hidroh.calendar.content.EventCursor;
 
 /**
  * 'Unlimited' adapter that load more and prune items
@@ -103,9 +103,9 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
      * Loads events for given day, each event should either
      * start and end within the day,
      * or starts before and end within of after the day
-     * {@link #bindEvents(long, Cursor)} should be called afterwards with results
+     * {@link #bindEvents(long, EventCursor)} should be called afterwards with results
      * @param timeMillis    time in millis that represents day in agenda
-     * @see {@link #bindEvents(long, Cursor)}
+     * @see {@link #bindEvents(long, EventCursor)}
      */
     protected void loadEvents(long timeMillis) {
         // override to load events
@@ -117,11 +117,11 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
      * or starts before and end within of after the day.
      * Bound cursor should be deactivated via {@link #deactivate()} when appropriate
      * @param timeMillis    time in millis that represents day in agenda
-     * @param cursor        {@link android.provider.CalendarContract.Events} cursor
+     * @param cursor        {@link CalendarContract.Events} cursor wrapper
      * @see {@link #loadEvents(long)}
      * @see {@link #deactivate()}
      */
-    public final void bindEvents(long timeMillis, Cursor cursor) {
+    public final void bindEvents(long timeMillis, EventCursor cursor) {
         Pair<EventGroup, Integer> pair = findGroup(timeMillis);
         if (pair != null) {
             pair.first.setCursor(cursor, mEventObserver);
@@ -131,8 +131,8 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
 
     /**
      * Closes bound cursors and unregisters their observers
-     * that have been previously bound by {@link #bindEvents(long, Cursor)}
-     * @see {@link #bindEvents(long, Cursor)}
+     * that have been previously bound by {@link #bindEvents(long, EventCursor)}
+     * @see {@link #bindEvents(long, EventCursor)}
      */
     public final void deactivate() {
         mEventGroups.clear();
@@ -524,7 +524,7 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
         };
         private EventGroup.EventObserver mEventObserver;
         int mLastCursorCount = 0;
-        Cursor mCursor;
+        EventCursor mCursor;
 
         EventGroup(Context context, long timeMillis) {
             super(CalendarUtils.toDayString(context, timeMillis), timeMillis);
@@ -550,7 +550,7 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
             return new EventItem(mTimeMillis, mCursor);
         }
 
-        void setCursor(Cursor cursor, EventGroup.EventObserver eventObserver) {
+        void setCursor(EventCursor cursor, EventObserver eventObserver) {
             deactivate(); // deactivate previously set cursor if any
             cursor.registerContentObserver(mContentObserver);
             mCursor = cursor;
@@ -592,13 +592,13 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
         boolean mIsAllDay;
         int mDisplayType = DISPLAY_TYPE_START_TIME;
 
-        EventItem(long timeMillis, Cursor cursor) {
-            super(cursor.getString(cursor.getColumnIndex(CalendarContract.Events.TITLE)), timeMillis);
-            mId = cursor.getLong(cursor.getColumnIndex(CalendarContract.Events._ID));
-            mCalendarId = cursor.getLong(cursor.getColumnIndex(CalendarContract.Events.CALENDAR_ID));
-            mStartTimeMillis = cursor.getLong(cursor.getColumnIndex(CalendarContract.Events.DTSTART));
-            mEndTimeMillis = cursor.getLong(cursor.getColumnIndex(CalendarContract.Events.DTEND));
-            mIsAllDay = cursor.getInt(cursor.getColumnIndex(CalendarContract.Events.ALL_DAY)) == 1;
+        EventItem(long timeMillis, EventCursor cursor) {
+            super(cursor.getTitle(), timeMillis);
+            mId = cursor.getId();
+            mCalendarId = cursor.getCalendarId();
+            mStartTimeMillis = cursor.getDateTimeStart();
+            mEndTimeMillis = cursor.getDateTimeEnd();
+            mIsAllDay = cursor.getAllDay();
             // all-day time in Calendar Provider is midnight in UTC, need to convert to local
             if (mIsAllDay) {
                 mStartTimeMillis = CalendarUtils.toLocalTimeZone(mStartTimeMillis);

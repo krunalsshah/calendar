@@ -3,18 +3,17 @@ package io.github.hidroh.calendar.test;
 import android.database.ContentObserver;
 import android.database.MatrixCursor;
 
-import io.github.hidroh.calendar.content.EventsQueryHandler;
+import io.github.hidroh.calendar.content.EventCursor;
 
-public class TestCursor extends MatrixCursor {
+public class TestEventCursor extends EventCursor {
     private ContentObserver contentObserver;
 
-    public TestCursor() {
-        super(EventsQueryHandler.PROJECTION);
+    public TestEventCursor() {
+        super(new MatrixCursor(EventCursor.PROJECTION));
     }
 
-    @Override
     public void addRow(Object[] columnValues) {
-        super.addRow(columnValues);
+        ((MatrixCursor) getWrappedCursor()).addRow(columnValues);
     }
 
     @Override

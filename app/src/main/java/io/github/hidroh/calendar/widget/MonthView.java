@@ -1,7 +1,6 @@
 package io.github.hidroh.calendar.widget;
 
 import android.content.Context;
-import android.database.Cursor;
 import android.provider.CalendarContract;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -25,6 +24,7 @@ import java.util.Set;
 
 import io.github.hidroh.calendar.CalendarUtils;
 import io.github.hidroh.calendar.R;
+import io.github.hidroh.calendar.content.EventCursor;
 import io.github.hidroh.calendar.text.style.CircleSpan;
 import io.github.hidroh.calendar.text.style.UnderDotSpan;
 
@@ -121,9 +121,9 @@ class MonthView extends RecyclerView {
 
     /**
      * Swaps cursor for calendar events
-     * @param cursor    {@link android.provider.CalendarContract.Events} cursor
+     * @param cursor    {@link CalendarContract.Events} cursor wrapper
      */
-    void swapCursor(@NonNull Cursor cursor) {
+    void swapCursor(@NonNull EventCursor cursor) {
         mAdapter.swapCursor(cursor);
     }
 
@@ -135,7 +135,7 @@ class MonthView extends RecyclerView {
         private final int mDays;
         private final long mBaseTimeMillis;
         @VisibleForTesting final Set<Integer> mEvents = new HashSet<>();
-        private Cursor mCursor;
+        private EventCursor mCursor;
         private int mSelectedPosition = -1;
 
         public GridAdapter(long monthMillis) {
@@ -210,7 +210,7 @@ class MonthView extends RecyclerView {
                     mStartOffset + CalendarUtils.dayOfMonth(dayMillis) - 1, false);
         }
 
-        void swapCursor(@NonNull Cursor cursor) {
+        void swapCursor(@NonNull EventCursor cursor) {
             if (mCursor == cursor) {
                 return;
             }
@@ -226,12 +226,9 @@ class MonthView extends RecyclerView {
             }
             // TODO improve performance
             do {
-                long start = mCursor.getLong(mCursor.getColumnIndexOrThrow(
-                        CalendarContract.Events.DTSTART));
-                long end = mCursor.getLong(mCursor.getColumnIndexOrThrow(
-                        CalendarContract.Events.DTEND));
-                boolean allDay = mCursor.getInt(
-                        mCursor.getColumnIndexOrThrow(CalendarContract.Events.ALL_DAY)) == 1;
+                long start = mCursor.getDateTimeStart();
+                long end = mCursor.getDateTimeEnd();
+                boolean allDay = mCursor.getAllDay();
                 // all-day time in Calendar Provider is midnight in UTC, need to convert to local
                 if (allDay) {
                     start = CalendarUtils.toLocalTimeZone(start);

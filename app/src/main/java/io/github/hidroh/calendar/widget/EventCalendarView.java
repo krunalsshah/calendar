@@ -2,7 +2,6 @@ package io.github.hidroh.calendar.widget;
 
 import android.content.Context;
 import android.database.ContentObserver;
-import android.database.Cursor;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.view.ViewPager;
@@ -10,6 +9,7 @@ import android.util.AttributeSet;
 import android.view.View;
 
 import io.github.hidroh.calendar.CalendarUtils;
+import io.github.hidroh.calendar.content.EventCursor;
 
 /**
  * A custom CalendarDate View, in the form of circular {@link ViewPager}
@@ -55,9 +55,9 @@ public class EventCalendarView extends ViewPager {
         }
 
         /**
-         * Loads events for given month. Should call {@link #bindEvents(long, Cursor)} on complete
+         * Loads events for given month. Should call {@link #bindEvents(long, EventCursor)} on complete
          * @param monthMillis    month in milliseconds
-         * @see {@link #bindEvents(long, Cursor)}
+         * @see {@link #bindEvents(long, EventCursor)}
          */
         protected void loadEvents(long monthMillis) {
             // override to load events
@@ -66,9 +66,9 @@ public class EventCalendarView extends ViewPager {
         /**
          * Binds events for given month that have been loaded via {@link #loadEvents(long)}
          * @param monthMillis    month in milliseconds
-         * @param cursor         {@link android.provider.CalendarContract.Events} cursor
+         * @param cursor         {@link android.provider.CalendarContract.Events} cursor wrapper
          */
-        public final void bindEvents(long monthMillis, Cursor cursor) {
+        public final void bindEvents(long monthMillis, EventCursor cursor) {
             mCalendarView.swapCursor(monthMillis, cursor);
         }
     }
@@ -227,7 +227,7 @@ public class EventCalendarView extends ViewPager {
         }
     }
 
-    private void swapCursor(long monthMillis, Cursor cursor) {
+    private void swapCursor(long monthMillis, EventCursor cursor) {
         mPagerAdapter.swapCursor(monthMillis, cursor, new PagerContentObserver(monthMillis));
     }
 
