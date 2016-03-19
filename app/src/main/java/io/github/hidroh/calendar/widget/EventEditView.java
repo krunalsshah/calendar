@@ -456,6 +456,14 @@ public class EventEditView extends RelativeLayout {
         }
 
         /**
+         * Checks if event has non-empty title
+         * @return  true if has non-empty title, false otherwise
+         */
+        public boolean hasTitle() {
+            return !TextUtils.isEmpty(title);
+        }
+
+        /**
          * Gets event title
          * @return  event title
          */

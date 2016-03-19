@@ -176,6 +176,14 @@ public class MainActivityTest {
                 .hasTextString("Event 1");
     }
 
+    @Test
+    public void testButtonAdd() {
+        //noinspection ConstantConditions
+        activity.findViewById(R.id.fab).performClick();
+        assertThat(shadowOf(activity).getNextStartedActivity())
+                .hasComponent(activity, EditActivity.class);
+    }
+
     @After
     public void tearDown() {
         controller.pause().stop().destroy();

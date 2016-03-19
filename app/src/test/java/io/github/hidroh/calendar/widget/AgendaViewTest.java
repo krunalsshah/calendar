@@ -25,6 +25,7 @@ import org.robolectric.internal.ShadowExtractor;
 import org.robolectric.util.ActivityController;
 
 import io.github.hidroh.calendar.CalendarUtils;
+import io.github.hidroh.calendar.EditActivity;
 import io.github.hidroh.calendar.R;
 import io.github.hidroh.calendar.content.EventCursor;
 import io.github.hidroh.calendar.test.TestEventCursor;
@@ -37,6 +38,7 @@ import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.robolectric.Shadows.shadowOf;
 
 @Config(shadows = {ShadowRecyclerView.class, ShadowLinearLayoutManager.class})
 @SuppressWarnings({"unchecked", "ConstantConditions"})
@@ -186,6 +188,10 @@ public class AgendaViewTest {
         TestEventCursor cursor = new TestEventCursor();
         cursor.addRow(new Object[]{1L, 1L, "Event 1", todayMillis + 28800000, todayMillis + 28800000, 0}); // 8AM UTC
         cursor.addRow(new Object[]{1L, 1L, "Event 2", todayMillis, todayMillis, 1}); // all day
+        cursor.addRow(new Object[]{1L, 1L, "Event 3",
+                todayMillis -  DateUtils.DAY_IN_MILLIS * 2, todayMillis, 0}); // multi day, end today
+        cursor.addRow(new Object[]{1L, 1L, "Event 4", todayMillis -  DateUtils.DAY_IN_MILLIS,
+                todayMillis + DateUtils.DAY_IN_MILLIS, 0}); // multi day, end tomorrow
         activity.cursors.put(todayMillis, cursor);
         createBindViewHolder(0);
 
@@ -200,6 +206,17 @@ public class AgendaViewTest {
                 .hasTextString(R.string.all_day);
         assertThat((TextView) item2.findViewById(R.id.text_view_title))
                 .hasTextString("Event 2");
+        View item3 = createBindViewHolder(3).itemView;
+        assertThat((TextView) item3.findViewById(R.id.text_view_time))
+                .hasTextString(activity.getString(R.string.end_time,
+                        CalendarUtils.toTimeString(activity, todayMillis)));
+        assertThat((TextView) item3.findViewById(R.id.text_view_title))
+                .hasTextString("Event 3");
+        View item4 = createBindViewHolder(4).itemView;
+        assertThat((TextView) item4.findViewById(R.id.text_view_time))
+                .hasTextString(R.string.all_day);
+        assertThat((TextView) item4.findViewById(R.id.text_view_title))
+                .hasTextString("Event 4");
 
         // deactivate adapter should close cursor
         assertThat(cursor).isNotClosed();
@@ -259,6 +276,14 @@ public class AgendaViewTest {
         AgendaAdapter newAdapter = new AgendaAdapter(activity) { };
         agendaView.setAdapter(newAdapter);
         assertThat(newAdapter.getItemCount()).isEqualTo(expected);
+    }
+
+    @Test
+    public void testItemClick() {
+        createBindViewHolder(1).itemView.performClick();
+        assertThat(shadowOf(activity).getNextStartedActivity())
+                .hasComponent(activity, EditActivity.class)
+                .hasExtra(EditActivity.EXTRA_EVENT);
     }
 
     @After

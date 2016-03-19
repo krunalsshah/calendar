@@ -49,6 +49,9 @@ public class EditActivity extends AppCompatActivity implements LoaderManager.Loa
         EventEditView.Event event;
         if (savedInstanceState == null) {
             event = getIntent().getParcelableExtra(EXTRA_EVENT);
+            if (event == null) {
+                event = EventEditView.Event.createInstance();
+            }
             //noinspection ConstantConditions
             mEventEditView.setEvent(event);
             Bundle args = new Bundle();
@@ -134,9 +137,12 @@ public class EditActivity extends AppCompatActivity implements LoaderManager.Loa
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        if (data == null) {
+            return; // TODO prompt to create calendar
+        }
         if (loader.getId() == LOADER_CALENDARS) {
             mEventEditView.swapCalendarSource(new CalendarCursor(data));
-        } else if (data != null && data.moveToFirst()) {
+        } else if (data.moveToFirst()) {
             mEventEditView.setSelectedCalendar(new CalendarCursor(data).getDisplayName());
         }
     }
@@ -196,7 +202,7 @@ public class EditActivity extends AppCompatActivity implements LoaderManager.Loa
                     .show();
             return false;
         }
-        return true;
+        return event.hasTitle();
     }
 
     private void confirmDelete() {

@@ -27,7 +27,6 @@ import io.github.hidroh.calendar.content.EventsQueryHandler;
 import io.github.hidroh.calendar.widget.AgendaAdapter;
 import io.github.hidroh.calendar.widget.AgendaView;
 import io.github.hidroh.calendar.widget.EventCalendarView;
-import io.github.hidroh.calendar.widget.EventEditView;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -179,9 +178,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void createEvent() {
-        startActivity(new Intent(this, EditActivity.class)
-                .putExtra(EditActivity.EXTRA_EVENT,
-                        EventEditView.Event.createInstance()));
+        startActivity(new Intent(this, EditActivity.class));
     }
 
     private boolean checkPermissions() {
