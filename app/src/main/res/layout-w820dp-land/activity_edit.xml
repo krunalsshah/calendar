@@ -36,6 +36,7 @@
 
     <android.support.v4.widget.NestedScrollView
         android:background="?android:attr/colorBackground"
+        android:fillViewport="true"
         android:layout_marginTop="@dimen/margin_form"
         android:layout_marginLeft="@dimen/calendar_width"
         android:layout_marginStart="@dimen/calendar_width"
@@ -49,7 +50,7 @@
         <io.github.hidroh.calendar.widget.EventEditView
             android:id="@+id/event_edit_view"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="match_parent" />
 
     </android.support.v4.widget.NestedScrollView>
 

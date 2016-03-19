@@ -4,12 +4,14 @@ import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.res.TypedArray;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.provider.CalendarContract;
 import android.support.annotation.NonNull;
 import android.support.annotation.VisibleForTesting;
 import android.support.design.widget.TextInputLayout;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.SwitchCompat;
 import android.text.Editable;
@@ -44,6 +46,8 @@ public class EventEditView extends RelativeLayout {
     private final TextView mTextViewEndDate;
     private final TextView mTextViewEndTime;
     private final TextView mTextViewCalendar;
+    private final int[] mColors;
+    private final int mTransparentColor;
     private Event mEvent = Event.createInstance();
     private CalendarCursor mCursor;
 
@@ -71,6 +75,17 @@ public class EventEditView extends RelativeLayout {
         mTextViewEndDate = (TextView) findViewById(R.id.text_view_end_date);
         mTextViewEndTime = (TextView) findViewById(R.id.text_view_end_time);
         mTextViewCalendar = (TextView) findViewById(R.id.text_view_calendar);
+        mTransparentColor = ContextCompat.getColor(context, android.R.color.transparent);
+        TypedArray colors = context.getResources().obtainTypedArray(R.array.calendar_colors);
+        if (colors.length() > 0) {
+            mColors = new int[colors.length()];
+            for (int i = 0; i < colors.length(); i++) {
+                mColors[i] = colors.getColor(i, mTransparentColor);
+            }
+        } else {
+            mColors = new int[]{mTransparentColor};
+        }
+        colors.recycle();
         setupViews();
         setEvent(mEvent);
     }
@@ -84,6 +99,7 @@ public class EventEditView extends RelativeLayout {
         mEditTextTitle.setText(event.title);
         mEditTextTitle.setSelection(mEditTextTitle.length());
         mSwitchAllDay.setChecked(event.isAllDay);
+        setCalendarId(mEvent.calendarId);
         setDate(true);
         setDate(false);
         setTime(true);
@@ -207,8 +223,17 @@ public class EventEditView extends RelativeLayout {
     @VisibleForTesting
     void changeCalendar(int selection) {
         mCursor.moveToPosition(selection);
-        mEvent.calendarId = mCursor.getId();
         mTextViewCalendar.setText(mCursor.getDisplayName());
+        setCalendarId(mCursor.getId());
+    }
+
+    private void setCalendarId(long calendarId) {
+        mEvent.calendarId = calendarId;
+        if (calendarId == Event.NO_ID) {
+            setBackgroundColor(mTransparentColor);
+        } else {
+            setBackgroundColor(mColors[(int) (Math.abs(mEvent.calendarId) % mColors.length)]);
+        }
     }
 
     private void ensureValidDates(boolean startDateChanged) {

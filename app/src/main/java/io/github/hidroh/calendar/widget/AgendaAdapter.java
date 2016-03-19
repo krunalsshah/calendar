@@ -2,6 +2,7 @@ package io.github.hidroh.calendar.widget;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.TypedArray;
 import android.database.ContentObserver;
 import android.os.Bundle;
 import android.os.Handler;
@@ -9,6 +10,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.provider.CalendarContract;
 import android.support.annotation.VisibleForTesting;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.util.Pair;
 import android.support.v7.text.AllCapsTransformationMethod;
 import android.support.v7.widget.RecyclerView;
@@ -46,10 +48,23 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
     };
     private final EventGroupList mEventGroups = new EventGroupList(BLOCK_SIZE);
     private final LayoutInflater mInflater;
+    private final int mTransparentColor;
+    private final int mColors[];
     private boolean mLock;
 
     public AgendaAdapter(Context context) {
         mInflater = LayoutInflater.from(context);
+        mTransparentColor = ContextCompat.getColor(context, android.R.color.transparent);
+        TypedArray colors = context.getResources().obtainTypedArray(R.array.calendar_colors);
+        if (colors.length() > 0) {
+            mColors = new int[colors.length()];
+            for (int i = 0; i < colors.length(); i++) {
+                mColors[i] = colors.getColor(i, mTransparentColor);
+            }
+        } else {
+            mColors = new int[]{mTransparentColor};
+        }
+        colors.recycle();
     }
 
     @Override
@@ -76,6 +91,7 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
             loadEvents(position);
         } else {
             bindTime((EventItem) item, (ContentViewHolder) holder);
+            bindColor((EventItem) item, (ContentViewHolder) holder);
             holder.itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -297,6 +313,15 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
         }
     }
 
+    private void bindColor(EventItem item, ContentViewHolder holder) {
+        if (item instanceof NoEventItem) {
+            holder.background.setBackgroundColor(mTransparentColor);
+        } else {
+            int color = mColors[(int) (Math.abs(item.mCalendarId) % mColors.length)];
+            holder.background.setBackgroundColor(color);
+        }
+    }
+
     private Pair<EventGroup, Integer> findGroup(long timeMillis) {
         int position = 0;
         // TODO improve searching
@@ -387,11 +412,13 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
 
         final TextView textViewTitle;
         final TextView textViewTime;
+        final View background;
 
         public ContentViewHolder(View itemView) {
             super(itemView);
             textViewTitle = (TextView) itemView.findViewById(R.id.text_view_title);
             textViewTime = (TextView) itemView.findViewById(R.id.text_view_time);
+            background = itemView.findViewById(R.id.background);
         }
     }
 
