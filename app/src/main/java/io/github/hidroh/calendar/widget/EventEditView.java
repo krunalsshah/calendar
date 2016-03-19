@@ -8,6 +8,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.provider.CalendarContract;
 import android.support.annotation.NonNull;
+import android.support.annotation.VisibleForTesting;
 import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.SwitchCompat;
@@ -30,6 +31,9 @@ import io.github.hidroh.calendar.CalendarUtils;
 import io.github.hidroh.calendar.R;
 import io.github.hidroh.calendar.content.CalendarCursor;
 
+/**
+ * Edit view for an event in {@link android.provider.CalendarContract.Events}
+ */
 public class EventEditView extends RelativeLayout {
 
     private final TextInputLayout mTextInputTitle;
@@ -60,7 +64,7 @@ public class EventEditView extends RelativeLayout {
                         .getDimensionPixelSize(R.dimen.vertical_padding);
         setPadding(horizontalPadding, verticalPadding, horizontalPadding, verticalPadding);
         mTextInputTitle = (TextInputLayout) findViewById(R.id.text_input_title);
-        mEditTextTitle = (EditText) findViewById(R.id.text_view_title);
+        mEditTextTitle = (EditText) findViewById(R.id.edit_text_title);
         mSwitchAllDay = (SwitchCompat) findViewById(R.id.switch_all_day);
         mTextViewStartDate = (TextView) findViewById(R.id.text_view_start_date);
         mTextViewStartTime = (TextView) findViewById(R.id.text_view_start_time);
@@ -71,6 +75,10 @@ public class EventEditView extends RelativeLayout {
         setEvent(mEvent);
     }
 
+    /**
+     * Sets view model for this view
+     * @param event    view model representing event to edit
+     */
     public void setEvent(@NonNull Event event) {
         mEvent = event;
         mEditTextTitle.setText(event.title);
@@ -82,16 +90,28 @@ public class EventEditView extends RelativeLayout {
         setTime(false);
     }
 
+    /**
+     * Gets view model representing event being edited
+     * @return  view model representing editing event
+     */
     @NonNull
     public Event getEvent() {
         return mEvent;
     }
 
+    /**
+     * Sets data source for calendars from {@link android.provider.CalendarContract.Calendars}
+     * @param cursor    cursor to access list of calendars
+     */
     public void swapCalendarSource(CalendarCursor cursor) {
         mCursor = cursor;
         mTextViewCalendar.setEnabled(mCursor != null && mCursor.getCount() > 0);
     }
 
+    /**
+     * Sets name of selected event calendar
+     * @param calendarName    selected calendar name
+     */
     public void setSelectedCalendar(String calendarName) {
         mTextViewCalendar.setText(calendarName);
     }
@@ -167,6 +187,7 @@ public class EventEditView extends RelativeLayout {
                 showCalendarPicker();
             }
         });
+        mTextViewCalendar.setEnabled(false);
     }
 
     private void setDate(boolean startDate) {
@@ -183,7 +204,8 @@ public class EventEditView extends RelativeLayout {
         ensureValidTimes(startTime);
     }
 
-    private void changeCalendar(int selection) {
+    @VisibleForTesting
+    void changeCalendar(int selection) {
         mCursor.moveToPosition(selection);
         mEvent.calendarId = mCursor.getId();
         mTextViewCalendar.setText(mCursor.getDisplayName());
@@ -194,11 +216,13 @@ public class EventEditView extends RelativeLayout {
             if (mEvent.localStart.after(mEvent.localEnd)) {
                 mEvent.localEnd.setTimeInMillis(mEvent.localStart.getTimeInMillis());
                 setDate(false);
+                setTime(false);
             }
         } else {
             if (mEvent.localEnd.before(mEvent.localStart)) {
                 mEvent.localStart.setTimeInMillis(mEvent.localEnd.getTimeInMillis());
                 setDate(true);
+                setTime(true);
             }
         }
     }
@@ -266,6 +290,10 @@ public class EventEditView extends RelativeLayout {
                 .show();
     }
 
+    /**
+     * View model for {@link EventEditView}.
+     * Event represented by this class is assumed to be in system timezone.
+     */
     public static class Event implements Parcelable {
 
         public static final Creator<Event> CREATOR = new Creator<Event>() {
@@ -280,43 +308,84 @@ public class EventEditView extends RelativeLayout {
             }
         };
 
+        /**
+         * Creates an instance of {@link Event} that starts at 'earliest' future time
+         * @return  an {@link Event} instance
+         */
         public static Event createInstance() {
             return new Event();
         }
 
+        /**
+         * Builder utility to build an {@link Event}
+         */
         public static class Builder {
             private final Event event = new Event();
 
+            /**
+             * Sets event ID
+             * @param id    event ID
+             * @return  this instance (fluent API)
+             */
             public Builder id(long id) {
                 event.id = id;
                 return this;
             }
 
+            /**
+             * Sets event calendar ID
+             * @param calendarId    event calendar ID
+             * @return  this instance (fluent API)
+             */
             public Builder calendarId(long calendarId) {
                 event.calendarId = calendarId;
                 return this;
             }
 
+            /**
+             * Sets event title
+             * @param title    event title
+             * @return  this instance (fluent API)
+             */
             public Builder title(String title) {
                 event.title = title;
                 return this;
             }
 
+            /**
+             * Sets event start date time
+             * @param timeMillis    start date time in milliseconds
+             * @return  this instance (fluent API)
+             */
             public Builder start(long timeMillis) {
                 event.localStart.setTimeInMillis(timeMillis);
                 return this;
             }
 
+            /**
+             * Sets event end date time
+             * @param timeMillis    end date time in milliseconds
+             * @return  this instance (fluent API)
+             */
             public Builder end(long timeMillis) {
                 event.localEnd.setTimeInMillis(timeMillis);
                 return this;
             }
 
+            /**
+             * Sets event all day status
+             * @param isAllDay    true if event is all day, false otherwise
+             * @return  this instance (fluent API)
+             */
             public Builder allDay(boolean isAllDay) {
                 event.isAllDay = isAllDay;
                 return this;
             }
 
+            /**
+             * Creates the {@link Event} that has been built by this builder
+             * @return  an {@link Event} instance
+             */
             public Event build() {
                 return event;
             }
@@ -362,22 +431,42 @@ public class EventEditView extends RelativeLayout {
             return 0;
         }
 
+        /**
+         * Gets event ID
+         * @return  event ID
+         */
         public long getId() {
             return id;
         }
 
+        /**
+         * Checks if this instance has event ID
+         * @return  true for existing events, false otherwise
+         */
         public boolean hasId() {
             return id != NO_ID;
         }
 
+        /**
+         * Checks if this instance has calendar ID
+         * @return  true if have calendar ID, false otherwise
+         */
         public boolean hasCalendarId() {
             return calendarId != NO_ID;
         }
 
+        /**
+         * Gets event title
+         * @return  event title
+         */
         public String getTitle() {
             return title;
         }
 
+        /**
+         * Gets event start date time
+         * @return  start date time in local timezone, or midnight UTC if event is all day
+         */
         public long getStartDateTime() {
             if (isAllDay) {
                 return CalendarUtils.toUtcTimeZone(localStart.getTimeInMillis());
@@ -386,6 +475,10 @@ public class EventEditView extends RelativeLayout {
             }
         }
 
+        /**
+         * Gets event end date time
+         * @return  end date time in local timezone, or midnight UTC if event is all day
+         */
         public long getEndDateTime() {
             if (isAllDay) {
                 return CalendarUtils.toUtcTimeZone(localEnd.getTimeInMillis());
@@ -394,14 +487,26 @@ public class EventEditView extends RelativeLayout {
             }
         }
 
+        /**
+         * Checks if event is all day
+         * @return  true if event is all day, false otherwise
+         */
         public boolean isAllDay() {
             return isAllDay;
         }
 
+        /**
+         * Gets event timezone
+         * @return  local system timezone ID, or UTC if event is all day
+         */
         public String getTimeZone() {
             return isAllDay ? CalendarUtils.TIMEZONE_UTC : TimeZone.getDefault().getID();
         }
 
+        /**
+         * Gets event calendar ID
+         * @return  event calendar ID
+         */
         public long getCalendarId() {
             return calendarId;
         }
