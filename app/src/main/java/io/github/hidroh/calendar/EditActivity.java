@@ -100,7 +100,7 @@ public class EditActivity extends AppCompatActivity implements LoaderManager.Loa
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
-            confirmFinish();
+            onBackPressed();
             return true;
         }
         if (item.getItemId() == R.id.action_save) {
@@ -127,6 +127,11 @@ public class EditActivity extends AppCompatActivity implements LoaderManager.Loa
         if (mEventEditView != null) { // may be null if not created due to missing permissions
             mEventEditView.swapCalendarSource(null);
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+        confirmFinish();
     }
 
     @SuppressWarnings("ConstantConditions")
@@ -156,7 +161,6 @@ public class EditActivity extends AppCompatActivity implements LoaderManager.Loa
                 CalendarCursor.PROJECTION,
                 selection, selectionArgs,
                 CalendarContract.Calendars.DEFAULT_SORT_ORDER);
-
     }
 
     @Override
@@ -200,7 +204,7 @@ public class EditActivity extends AppCompatActivity implements LoaderManager.Loa
                 .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        finish();
+                        EditActivity.super.onBackPressed();
                     }
                 })
                 .setNegativeButton(android.R.string.no, null)
