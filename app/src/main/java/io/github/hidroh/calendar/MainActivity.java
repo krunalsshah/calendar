@@ -31,7 +31,6 @@ import io.github.hidroh.calendar.widget.EventCalendarView;
 public class MainActivity extends AppCompatActivity {
 
     private static final String STATE_TOOLBAR_TOGGLE = "state:toolbarToggle";
-    private static final String STATE_EMPTY_VISIBLE = "state:emptyVisible";
 
     private final Coordinator mCoordinator = new Coordinator();
     private CheckedTextView mToolbarToggle;
@@ -66,16 +65,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onPostCreate(@Nullable Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
         mCoordinator.coordinate(mToolbarToggle, mCalendarView, mAgendaView);
-        boolean emptyVisible = savedInstanceState != null &&
-                savedInstanceState.getBoolean(STATE_EMPTY_VISIBLE, false);
-        if (emptyVisible) {
-            toggleEmptyView(true);
+        if (checkPermissions()) {
+            loadEvents();
         } else {
-            if (checkPermissions()) {
-                loadEvents();
-            } else {
-                requestPermissions();
-            }
+            toggleEmptyView(true);
         }
     }
 
@@ -103,9 +96,6 @@ public class MainActivity extends AppCompatActivity {
         super.onSaveInstanceState(outState);
         mCoordinator.saveState(outState);
         outState.putBoolean(STATE_TOOLBAR_TOGGLE, mToolbarToggle.isChecked());
-        //noinspection ConstantConditions
-        outState.putBoolean(STATE_EMPTY_VISIBLE,
-                findViewById(R.id.empty).getVisibility() == View.VISIBLE);
     }
 
     @Override

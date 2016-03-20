@@ -14,9 +14,10 @@ import org.robolectric.util.ActivityController;
 
 import static org.assertj.android.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+@SuppressWarnings("ConstantConditions")
 @RunWith(RobolectricGradleTestRunner.class)
 public class MainActivityPermissionTest {
     private ActivityController<TestMainActivity> controller;
@@ -30,13 +31,15 @@ public class MainActivityPermissionTest {
 
     @Test
     public void testInitialState() {
-        verify(activity.permissionRequester).requestPermissions();
+        verify(activity.permissionRequester, never()).requestPermissions();
         assertThat(activity.findViewById(R.id.fab)).isNotVisible();
-        assertThat(activity.findViewById(R.id.empty)).isNotVisible();
+        assertThat(activity.findViewById(R.id.empty)).isVisible();
     }
 
     @Test
     public void testGrantPermissions() {
+        activity.findViewById(R.id.button_permission).performClick();
+        verify(activity.permissionRequester).requestPermissions();
         activity.permissionCheckResult = PackageManager.PERMISSION_GRANTED;
         activity.onRequestPermissionsResult(0, new String[0], new int[0]);
         assertThat(activity.findViewById(R.id.fab)).isVisible();
@@ -45,34 +48,21 @@ public class MainActivityPermissionTest {
 
     @Test
     public void testDenyPermissions() {
+        activity.findViewById(R.id.button_permission).performClick();
+        verify(activity.permissionRequester).requestPermissions();
         activity.onRequestPermissionsResult(0, new String[0], new int[0]);
         assertThat(activity.findViewById(R.id.fab)).isNotVisible();
         assertThat(activity.findViewById(R.id.empty)).isVisible();
     }
 
-    @SuppressWarnings("ConstantConditions")
-    @Test
-    public void testRequestPermissions() {
-        // denied
-        verify(activity.permissionRequester).requestPermissions();
-        activity.onRequestPermissionsResult(0, new String[0], new int[0]);
-        assertThat(activity.findViewById(R.id.button_permission)).isVisible();
-
-        // request via UI
-        activity.findViewById(R.id.button_permission).performClick();
-        verify(activity.permissionRequester, times(2)).requestPermissions();
-    }
-
     @Test
     public void testStateRestoration() {
-        // denied
-        verify(activity.permissionRequester).requestPermissions();
-        activity.onRequestPermissionsResult(0, new String[0], new int[0]);
+        // initial state
+        verify(activity.permissionRequester, never()).requestPermissions();
         assertThat(activity.findViewById(R.id.empty)).isVisible();
 
-        // recreating should not prompt for permission again, show empty UI instead
         activity.shadowRecreate();
-        verify(activity.permissionRequester).requestPermissions();
+        verify(activity.permissionRequester, never()).requestPermissions();
         assertThat(activity.findViewById(R.id.empty)).isVisible();
     }
 
