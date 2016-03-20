@@ -8,15 +8,33 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
 
+/**
+ * Utility class for {@link Calendar} and date time related operations
+ */
 public class CalendarUtils {
 
+    /**
+     * Constant value for a 'no time' timestamp
+     */
     public static final long NO_TIME_MILLIS = -1;
+    /**
+     * Constant value for UTC time zone
+     */
     public static final String TIMEZONE_UTC = "UTC";
 
+    /**
+     * Checks if given timestamp is a valid time
+     * @param timeMillis    time in milliseconds
+     * @return  true if not {@link #NO_TIME_MILLIS}, false otherwise
+     */
     public static boolean isNotTime(long timeMillis) {
         return timeMillis == NO_TIME_MILLIS;
     }
 
+    /**
+     * Get today time in milliseconds, excluding time information
+     * @return  today time in milliseconds
+     */
     public static long today() {
         DateOnlyCalendar calendar = DateOnlyCalendar.today();
         long timeMillis = calendar.getTimeInMillis();
@@ -24,6 +42,12 @@ public class CalendarUtils {
         return timeMillis;
     }
 
+    /**
+     * Formats given time to a readable day string, e.g. Sunday, March 20
+     * @param context       resources provider
+     * @param timeMillis    time in milliseconds
+     * @return  formatted day string
+     */
     public static String toDayString(Context context, long timeMillis) {
         return DateUtils.formatDateTime(context, timeMillis,
                 DateUtils.FORMAT_SHOW_WEEKDAY |
@@ -31,6 +55,12 @@ public class CalendarUtils {
                         DateUtils.FORMAT_NO_YEAR);
     }
 
+    /**
+     * Formats given time to a readable month string, e.g. March 2016
+     * @param context       resources provider
+     * @param timeMillis    time in milliseconds
+     * @return  formatted month string
+     */
     public static String toMonthString(Context context, long timeMillis) {
         return DateUtils.formatDateRange(context, timeMillis, timeMillis,
                 DateUtils.FORMAT_SHOW_DATE |
@@ -38,10 +68,22 @@ public class CalendarUtils {
                         DateUtils.FORMAT_SHOW_YEAR);
     }
 
+    /**
+     * Formats given time to a readable time string, e.g. 8:30 AM
+     * @param context       resources provider
+     * @param timeMillis    time in milliseconds
+     * @return  formatted time string
+     */
     public static String toTimeString(Context context, long timeMillis) {
         return DateUtils.formatDateTime(context, timeMillis, DateUtils.FORMAT_SHOW_TIME);
     }
 
+    /**
+     * Checks if two timestamps fall within the same month
+     * @param first     first timestamp in milliseconds
+     * @param second    second timestamp in milliseconds
+     * @return  true if two timestamps fall within the same month, false otherwise or if time is invalid
+     */
     @SuppressWarnings("ConstantConditions")
     public static boolean sameMonth(long first, long second) {
         if (isNotTime(first) || isNotTime(second)) {
@@ -55,6 +97,11 @@ public class CalendarUtils {
         return same;
     }
 
+    /**
+     * Gets day of month for given time
+     * @param timeMillis    time in milliseconds
+     * @return  day of month or -1 if invalid timestamp
+     */
     public static int dayOfMonth(long timeMillis) {
         if (isNotTime(timeMillis)) {
             return -1;
@@ -66,6 +113,12 @@ public class CalendarUtils {
         return day;
     }
 
+    /**
+     * Checks if first timestamp is in an earlier month than second timestamp
+     * @param first     first timestamp in milliseconds
+     * @param second    second timestamp in milliseconds
+     * @return  true if first timestamp is in an earlier month, false otherwise
+     */
     @SuppressWarnings("ConstantConditions")
     public static boolean monthBefore(long first, long second) {
         if (isNotTime(first) || isNotTime(second)) {
@@ -79,6 +132,12 @@ public class CalendarUtils {
         return before;
     }
 
+    /**
+     * Checks if first timestamp is in a later month than second timestamp
+     * @param first     first timestamp in milliseconds
+     * @param second    second timestamp in milliseconds
+     * @return  true if first timestamp is in a later month, false otherwise
+     */
     @SuppressWarnings("ConstantConditions")
     public static boolean monthAfter(long first, long second) {
         if (isNotTime(first) || isNotTime(second)) {
@@ -92,6 +151,12 @@ public class CalendarUtils {
         return after;
     }
 
+    /**
+     * Adds months to given month
+     * @param timeMillis    month in milliseconds
+     * @param months        number of months to add
+     * @return  new time in milliseconds, or {@link #NO_TIME_MILLIS} if month is invalid
+     */
     public static long addMonths(long timeMillis, int months) {
         if (isNotTime(timeMillis)) {
             return NO_TIME_MILLIS;
@@ -104,6 +169,11 @@ public class CalendarUtils {
         return result;
     }
 
+    /**
+     * Gets first day of given month
+     * @param monthMillis    month in milliseconds
+     * @return  first day of month in milliseconds, or {@link #NO_TIME_MILLIS} if month is invalid
+     */
     public static long monthFirstDay(long monthMillis) {
         if (isNotTime(monthMillis)) {
             return NO_TIME_MILLIS;
@@ -116,6 +186,11 @@ public class CalendarUtils {
         return result;
     }
 
+    /**
+     * Gets last day of given month
+     * @param monthMillis    month in milliseconds
+     * @return  last day of month in milliseconds, or {@link #NO_TIME_MILLIS} if month is invalid
+     */
     public static long monthLastDay(long monthMillis) {
         if (isNotTime(monthMillis)) {
             return NO_TIME_MILLIS;
@@ -128,6 +203,11 @@ public class CalendarUtils {
         return result;
     }
 
+    /**
+     * Gets number of days in given month
+     * @param monthMillis    month in milliseconds
+     * @return  number of days in given month, or 0 if month is not valid
+     */
     public static int monthSize(long monthMillis) {
         if (isNotTime(monthMillis)) {
             return 0;
@@ -139,6 +219,12 @@ public class CalendarUtils {
         return size;
     }
 
+    /**
+     * Gets first day offset for given month
+     * E.g. if first day of week is Sunday, and first day of month is Tuesday, offset is 2
+     * @param monthMillis    month in milliseconds
+     * @return  first day offset or 0 if month is not valid
+     */
     public static int monthFirstDayOffset(long monthMillis) {
         if (isNotTime(monthMillis)) {
             return 0;
@@ -150,11 +236,21 @@ public class CalendarUtils {
         return offset;
     }
 
+    /**
+     * Converts given UTC time to local time
+     * @param utcTimeMillis    UTC time in milliseconds
+     * @return  local time in milliseconds
+     */
     public static long toLocalTimeZone(long utcTimeMillis) {
         return convertTimeZone(TimeZone.getTimeZone(TIMEZONE_UTC), TimeZone.getDefault(),
                 utcTimeMillis);
     }
 
+    /**
+     * Converts given local time to UTC time
+     * @param localTimeMillis    local time in milliseconds
+     * @return  UTC time in milliseconds
+     */
     public static long toUtcTimeZone(long localTimeMillis) {
         return convertTimeZone(TimeZone.getDefault(), TimeZone.getTimeZone(TIMEZONE_UTC),
                 localTimeMillis);
@@ -178,6 +274,7 @@ public class CalendarUtils {
         return localTimeMillis;
 
     }
+
     /**
      * Light extension of {@link Calendar} that strips away time, keeping only date information
      */
