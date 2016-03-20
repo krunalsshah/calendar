@@ -21,6 +21,10 @@ public class CalendarUtils {
      * Constant value for UTC time zone
      */
     public static final String TIMEZONE_UTC = "UTC";
+    /**
+     * Constant value for week start
+     */
+    public static final int WEEK_START = Calendar.SUNDAY;
 
     /**
      * Checks if given timestamp is a valid time
@@ -298,6 +302,8 @@ public class CalendarUtils {
             DateOnlyCalendar dateOnlyCalendar = DateOnlyCalendar.obtain();
             dateOnlyCalendar.setTimeInMillis(timeMillis);
             dateOnlyCalendar.stripTime();
+            //noinspection WrongConstant
+            dateOnlyCalendar.setFirstDayOfWeek(WEEK_START);
             return dateOnlyCalendar;
         }
 

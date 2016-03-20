@@ -163,7 +163,7 @@ class MonthView extends RecyclerView {
         public void onBindViewHolder(CellViewHolder holder, int position) {
             if (holder instanceof HeaderViewHolder) {
                 ((HeaderViewHolder) holder).textView.setText(
-                        mWeekdays[position + Calendar.SUNDAY]);
+                        mWeekdays[position + CalendarUtils.WEEK_START]);
             } else { // holder instanceof ContentViewHolder
                 if (position < mStartOffset) {
                     ((ContentViewHolder) holder).textView.setText(null);
