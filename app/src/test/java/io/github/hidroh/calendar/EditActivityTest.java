@@ -3,6 +3,8 @@ package io.github.hidroh.calendar;
 import android.app.Dialog;
 import android.content.Intent;
 import android.content.ShadowAsyncQueryHandler;
+import android.content.pm.ActivityInfo;
+import android.content.pm.ResolveInfo;
 import android.database.ContentObserver;
 import android.os.Bundle;
 import android.provider.CalendarContract;
@@ -15,6 +17,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricGradleTestRunner;
+import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 import org.robolectric.fakes.RoboCursor;
 import org.robolectric.shadows.ShadowApplication;
@@ -37,8 +40,8 @@ import static org.robolectric.Shadows.shadowOf;
 @Config(shadows = {ShadowContentResolverCompatJellybean.class, ShadowAsyncQueryHandler.class})
 @RunWith(RobolectricGradleTestRunner.class)
 public class EditActivityTest {
-    private ActivityController<EditActivity> controller;
-    private EditActivity activity;
+    private ActivityController<TestEditActivity> controller;
+    private TestEditActivity activity;
 
     @Before
     public void setUp() {
@@ -49,8 +52,25 @@ public class EditActivityTest {
         });
         shadowOf(ShadowApplication.getInstance().getContentResolver())
                 .setCursor(CalendarContract.Calendars.CONTENT_URI, cursor);
-        controller = Robolectric.buildActivity(EditActivity.class);
+        controller = Robolectric.buildActivity(TestEditActivity.class);
         activity = controller.get();
+    }
+
+    @Test
+    public void testNoPermissions() {
+        ResolveInfo resolveInfo = new ResolveInfo();
+        resolveInfo.activityInfo = new ActivityInfo();
+        resolveInfo.activityInfo.packageName = activity.getPackageName();
+        resolveInfo.activityInfo.name = MainActivity.class.getName();
+        RuntimeEnvironment.getRobolectricPackageManager()
+                .addResolveInfoForIntent(new Intent(Intent.ACTION_MAIN)
+                        .setPackage(activity.getPackageName())
+                        .addCategory(Intent.CATEGORY_LAUNCHER), resolveInfo);
+        activity.permissionsResult = false;
+        controller.create();
+        assertThat(activity).isFinishing();
+        assertThat(shadowOf(activity).getNextStartedActivity())
+                .hasComponent(activity, MainActivity.class);
     }
 
     @Test
@@ -266,6 +286,15 @@ public class EditActivityTest {
     @After
     public void tearDown() {
         controller.pause().stop().destroy();
+    }
+
+    static class TestEditActivity extends EditActivity {
+        boolean permissionsResult = true;
+
+        @Override
+        protected boolean checkPermissions() {
+            return permissionsResult;
+        }
     }
 
     static class TestRoboCursor extends RoboCursor {

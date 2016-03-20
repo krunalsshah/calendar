@@ -1,15 +1,20 @@
 package io.github.hidroh.calendar;
 
+import android.Manifest;
 import android.content.AsyncQueryHandler;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.CalendarContract;
+import android.support.annotation.VisibleForTesting;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
@@ -46,6 +51,13 @@ public class EditActivity extends AppCompatActivity implements LoaderManager.Loa
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (!checkPermissions()) {
+            // simply relaunch app if permissions are revoked
+            finish();
+            startActivity(getPackageManager().getLaunchIntentForPackage(getPackageName())
+                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK));
+            return;
+        }
         setContentView(R.layout.activity_edit);
         setSupportActionBar((Toolbar) findViewById(R.id.toolbar));
         //noinspection ConstantConditions
@@ -112,7 +124,9 @@ public class EditActivity extends AppCompatActivity implements LoaderManager.Loa
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mEventEditView.swapCalendarSource(null);
+        if (mEventEditView != null) { // may be null if not created due to missing permissions
+            mEventEditView.swapCalendarSource(null);
+        }
     }
 
     @SuppressWarnings("ConstantConditions")
@@ -171,6 +185,13 @@ public class EditActivity extends AppCompatActivity implements LoaderManager.Loa
         if (loader.getId() == LOADER_CALENDARS) {
             mEventEditView.swapCalendarSource(null);
         }
+    }
+
+    @VisibleForTesting
+    protected boolean checkPermissions() {
+        return (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_CALENDAR) |
+                ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_CALENDAR)) ==
+                PackageManager.PERMISSION_GRANTED;
     }
 
     private void confirmFinish() {
