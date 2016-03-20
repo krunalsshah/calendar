@@ -37,6 +37,7 @@ public class EditActivity extends AppCompatActivity implements LoaderManager.Loa
     private static final String EXTRA_CALENDAR_ID = "extra:calendarId";
     private static final int LOADER_CALENDARS = 0;
     private static final int LOADER_SELECTED_CALENDAR = 1;
+    private static final int LOADER_LOCAL_CALENDAR = 2;
     private static final int TOKEN_EVENT = 0;
     private static final int TOKEN_CALENDAR = 1;
 
@@ -69,6 +70,7 @@ public class EditActivity extends AppCompatActivity implements LoaderManager.Loa
         }
         setTitle(event.hasId() ? R.string.edit_event : R.string.create_event);
         getSupportLoaderManager().initLoader(LOADER_CALENDARS, null, this);
+        getSupportLoaderManager().initLoader(LOADER_LOCAL_CALENDAR, null, this);
     }
 
     @Override
@@ -132,6 +134,9 @@ public class EditActivity extends AppCompatActivity implements LoaderManager.Loa
         if (id == LOADER_SELECTED_CALENDAR) {
             selection = CalendarContract.Calendars._ID + "=?";
             selectionArgs = new String[]{String.valueOf(args.getLong(EXTRA_CALENDAR_ID))};
+        } else if (id == LOADER_LOCAL_CALENDAR) {
+            selection = CalendarContract.Calendars.ACCOUNT_TYPE + "=?";
+            selectionArgs = new String[]{String.valueOf(CalendarContract.ACCOUNT_TYPE_LOCAL)};
         }
         return new CursorLoader(this, CalendarContract.Calendars.CONTENT_URI,
                 CalendarCursor.PROJECTION,
@@ -142,14 +147,22 @@ public class EditActivity extends AppCompatActivity implements LoaderManager.Loa
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-        if (loader.getId() == LOADER_CALENDARS) {
-            if (data != null && data.moveToFirst()) {
-                mEventEditView.swapCalendarSource(new CalendarCursor(data));
-            } else {
-                createLocalCalendar();
-            }
-        } else if (data != null && data.moveToFirst()) {
-            mEventEditView.setSelectedCalendar(new CalendarCursor(data).getDisplayName());
+        switch (loader.getId()) {
+            case LOADER_CALENDARS:
+                if (data != null && data.moveToFirst()) {
+                    mEventEditView.swapCalendarSource(new CalendarCursor(data));
+                }
+                break;
+            case LOADER_LOCAL_CALENDAR:
+                if (data == null || data.getCount() == 0) {
+                    createLocalCalendar();
+                }
+                break;
+            case LOADER_SELECTED_CALENDAR:
+                if (data != null && data.moveToFirst()) {
+                    mEventEditView.setSelectedCalendar(new CalendarCursor(data).getDisplayName());
+                }
+                break;
         }
     }
 
