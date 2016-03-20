@@ -48,7 +48,7 @@
     <ImageView
         app:srcCompat="@drawable/ic_title_white_24dp"
         tools:src="@drawable/ic_title_white_24dp"
-        android:tint="?android:attr/textColorTertiary"
+        android:tint="?android:attr/textColorHint"
         android:scaleType="center"
         android:contentDescription="@string/event_time"
         android:layout_alignTop="@id/text_input_title"
@@ -107,7 +107,7 @@
     <ImageView
         app:srcCompat="@drawable/ic_access_time_white_24dp"
         tools:src="@drawable/ic_access_time_white_24dp"
-        android:tint="?android:attr/textColorTertiary"
+        android:tint="?android:attr/textColorHint"
         android:scaleType="center"
         android:contentDescription="@string/event_time"
         android:layout_alignTop="@id/row2"
@@ -203,7 +203,7 @@
     <ImageView
         app:srcCompat="@drawable/ic_event_white_24dp"
         tools:src="@drawable/ic_event_white_24dp"
-        android:tint="?android:attr/textColorTertiary"
+        android:tint="?android:attr/textColorHint"
         android:scaleType="center"
         android:contentDescription="@string/event_calendar"
         android:layout_alignTop="@id/row5"

@@ -6,25 +6,23 @@
     android:layout_height="match_parent"
     tools:showIn="@layout/activity_main">
 
-    <FrameLayout
-        android:id="@+id/calendar_view_container"
-        android:background="?android:attr/colorBackground"
-        android:elevation="@dimen/default_elevation"
+    <io.github.hidroh.calendar.widget.EventCalendarView
+        android:id="@id/calendar_view"
         android:layout_width="@dimen/calendar_width"
-        android:layout_height="match_parent"
-        tools:ignore="UnusedAttribute">
+        android:layout_height="match_parent" />
 
-        <io.github.hidroh.calendar.widget.EventCalendarView
-            android:id="@id/calendar_view"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-
-    </FrameLayout>
+    <View
+        android:id="@+id/divider"
+        android:background="@color/colorDivider"
+        android:layout_toRightOf="@id/calendar_view"
+        android:layout_toEndOf="@id/calendar_view"
+        android:layout_width="@dimen/divider_size"
+        android:layout_height="match_parent" />
 
     <io.github.hidroh.calendar.widget.AgendaView
         android:id="@id/agenda_view"
-        android:layout_toRightOf="@id/calendar_view_container"
-        android:layout_toEndOf="@id/calendar_view_container"
+        android:layout_toRightOf="@id/divider"
+        android:layout_toEndOf="@id/divider"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 

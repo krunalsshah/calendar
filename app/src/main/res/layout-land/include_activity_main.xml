@@ -8,6 +8,11 @@
     tools:showIn="@layout/activity_main"
     tools:ignore="MergeRootFrame">
 
+    <io.github.hidroh.calendar.widget.AgendaView
+        android:id="@id/agenda_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
     <io.github.hidroh.calendar.widget.EventCalendarView
         android:id="@id/calendar_view"
         android:visibility="gone"
@@ -17,10 +22,5 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         tools:ignore="UnusedAttribute" />
-
-    <io.github.hidroh.calendar.widget.AgendaView
-        android:id="@id/agenda_view"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
 
 </FrameLayout>
