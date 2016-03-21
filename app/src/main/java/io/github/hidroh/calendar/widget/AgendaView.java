@@ -17,6 +17,7 @@ import android.view.View;
 
 import io.github.hidroh.calendar.CalendarUtils;
 import io.github.hidroh.calendar.R;
+import io.github.hidroh.calendar.weather.Weather;
 
 public class AgendaView extends RecyclerView {
     private static final String STATE_VIEW = "state:view";
@@ -129,6 +130,16 @@ public class AgendaView extends RecyclerView {
             // lock binding to prevent loading events that might offset scroll position
             mAdapter.lockBinding();
             smoothScrollToPosition(mPendingScrollPosition);
+        }
+    }
+
+    /**
+     * Sets weather information to be displayed
+     * @param weather    weather information to be displayed, or null to disable
+     */
+    public void setWeather(@Nullable Weather weather) {
+        if (mAdapter != null) {
+            mAdapter.setWeather(weather);
         }
     }
 

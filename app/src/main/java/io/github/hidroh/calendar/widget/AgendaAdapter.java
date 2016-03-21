@@ -4,11 +4,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.TypedArray;
 import android.database.ContentObserver;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.provider.CalendarContract;
+import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.util.Pair;
@@ -27,6 +29,7 @@ import io.github.hidroh.calendar.CalendarUtils;
 import io.github.hidroh.calendar.EditActivity;
 import io.github.hidroh.calendar.R;
 import io.github.hidroh.calendar.content.EventCursor;
+import io.github.hidroh.calendar.weather.Weather;
 
 /**
  * 'Unlimited' adapter that load more and prune items
@@ -51,12 +54,19 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
     private final EventGroupList mEventGroups = new EventGroupList(BLOCK_SIZE);
     private final LayoutInflater mInflater;
     private final int mTransparentColor;
+    private final int mIconTint;
     private final int mColors[];
+    private Weather mWeather;
     private boolean mLock;
 
     public AgendaAdapter(Context context) {
         mInflater = LayoutInflater.from(context);
         mTransparentColor = ContextCompat.getColor(context, android.R.color.transparent);
+        TypedArray ta = context.getTheme().obtainStyledAttributes(new int[]{
+                android.R.attr.textColorTertiary
+        });
+        mIconTint = ta.getColor(0, 0);
+        ta.recycle();
         TypedArray colors = context.getResources().obtainTypedArray(R.array.calendar_colors);
         if (colors.length() > 0) {
             mColors = new int[colors.length()];
@@ -88,6 +98,7 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
         bindTitle(item, holder);
         if (item instanceof EventGroup) {
             loadEvents(position);
+            bindWeather((EventGroup) item, (GroupViewHolder) holder);
         } else {
             bindTime((EventItem) item, (ContentViewHolder) holder);
             bindColor((EventItem) item, (ContentViewHolder) holder);
@@ -281,6 +292,15 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
         notifyItemRangeChanged(0, getItemCount());
     }
 
+    /**
+     * Sets weather information to be displayed
+     * @param weather    weather information to be displayed, or null to disable
+     */
+    void setWeather(@Nullable Weather weather) {
+        mWeather = weather;
+        notifyItemRangeChanged(0, getItemCount());
+    }
+
     private void bindTitle(AdapterItem item, RowViewHolder holder) {
         if (item instanceof EventGroup) {
             ((GroupViewHolder) holder).textView.setText(item.mTitle);
@@ -322,6 +342,33 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
         } else {
             int color = mColors[(int) (Math.abs(item.mCalendarId) % mColors.length)];
             holder.background.setBackgroundColor(color);
+        }
+    }
+
+    private void bindWeather(EventGroup groupItem, final GroupViewHolder holder) {
+        // bind weather for today and tomorrow if exist, hide UI otherwise
+        if (groupItem.mTimeMillis == CalendarUtils.today() &&
+                mWeather != null && mWeather.today != null) {
+            bindWeatherInfo(holder.textViewMorning, mWeather.today.morning);
+            bindWeatherInfo(holder.textViewAfternoon, mWeather.today.afternoon);
+            bindWeatherInfo(holder.textViewNight, mWeather.today.night);
+            holder.weather.setVisibility(View.VISIBLE);
+        } else if (groupItem.mTimeMillis == CalendarUtils.today() + DateUtils.DAY_IN_MILLIS &&
+                mWeather != null && mWeather.tomorrow != null) {
+            bindWeatherInfo(holder.textViewMorning, mWeather.tomorrow.morning);
+            bindWeatherInfo(holder.textViewAfternoon, mWeather.tomorrow.afternoon);
+            bindWeatherInfo(holder.textViewNight, mWeather.tomorrow.night);
+            holder.weather.setVisibility(View.VISIBLE);
+        } else {
+            holder.weather.setVisibility(View.GONE);
+        }
+    }
+
+    private void bindWeatherInfo(TextView textView, Weather.WeatherInfo info) {
+        Drawable icon = info.getIcon(textView.getContext(), mIconTint);
+        textView.setCompoundDrawablesWithIntrinsicBounds(icon, null, null, null);
+        if (info.temperature != null) {
+            textView.setText(textView.getContext().getString(R.string.fahrenheit, info.temperature));
         }
     }
 
@@ -405,12 +452,20 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
 
     static class GroupViewHolder extends RowViewHolder {
         final TextView textView;
+        final TextView textViewMorning;
+        final TextView textViewAfternoon;
+        final TextView textViewNight;
+        final View weather;
 
         public GroupViewHolder(View itemView) {
             super(itemView);
-            textView = (TextView) itemView;
+            textView = (TextView) itemView.findViewById(R.id.text_view_title);
             textView.setTransformationMethod(
                     new AllCapsTransformationMethod(textView.getContext()));
+            weather = itemView.findViewById(R.id.weather);
+            textViewMorning = (TextView) itemView.findViewById(R.id.text_view_morning);
+            textViewAfternoon = (TextView) itemView.findViewById(R.id.text_view_afternoon);
+            textViewNight = (TextView) itemView.findViewById(R.id.text_view_night);
         }
     }
 

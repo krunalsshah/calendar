@@ -31,6 +31,7 @@ import io.github.hidroh.calendar.content.EventCursor;
 import io.github.hidroh.calendar.test.TestEventCursor;
 import io.github.hidroh.calendar.test.shadows.ShadowLinearLayoutManager;
 import io.github.hidroh.calendar.test.shadows.ShadowRecyclerView;
+import io.github.hidroh.calendar.weather.Weather;
 
 import static org.assertj.android.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -295,13 +296,45 @@ public class AgendaViewTest {
                 .hasExtra(EditActivity.EXTRA_EVENT);
     }
 
+    @Test
+    public void testBindEmptyWeather() {
+        Weather weather = new Weather(new String[0], new String[0]);
+        agendaView.setWeather(weather);
+        int todayPosition = layoutManager.findFirstVisibleItemPosition();
+        assertThat(createBindViewHolder(todayPosition)
+                .itemView
+                .findViewById(R.id.weather))
+                .isNotVisible();
+        assertThat(createBindViewHolder(todayPosition + 2)
+                .itemView
+                .findViewById(R.id.weather))
+                .isNotVisible();
+    }
+
+    @Test
+    public void testBindFullWeather() {
+        Weather weather = new Weather(
+                new String[]{"cloudy", "86.0", "cloudy", "86.0", "cloudy", "86.0"},
+                new String[]{"cloudy", "86.0", "cloudy", "86.0", "cloudy", "86.0"});
+        agendaView.setWeather(weather);
+        int todayPosition = layoutManager.findFirstVisibleItemPosition();
+        assertThat(createBindViewHolder(todayPosition)
+                .itemView
+                .findViewById(R.id.weather))
+                .isVisible();
+        assertThat(createBindViewHolder(todayPosition + 2)
+                .itemView
+                .findViewById(R.id.weather))
+                .isVisible();
+    }
+
     @After
     public void tearDown() {
         controller.pause().stop().destroy();
     }
 
     private void assertHasDate(RecyclerView.ViewHolder viewHolder, long timeMillis) {
-        assertThat((TextView) viewHolder.itemView)
+        assertThat((TextView) viewHolder.itemView.findViewById(R.id.text_view_title))
                 .hasTextString(CalendarUtils.toDayString(RuntimeEnvironment.application, timeMillis));
     }
 

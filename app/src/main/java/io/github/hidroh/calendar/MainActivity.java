@@ -4,17 +4,21 @@ import android.Manifest;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.text.TextUtils;
 import android.text.format.DateUtils;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -24,6 +28,7 @@ import android.widget.TextView;
 
 import io.github.hidroh.calendar.content.EventCursor;
 import io.github.hidroh.calendar.content.EventsQueryHandler;
+import io.github.hidroh.calendar.weather.WeatherSyncService;
 import io.github.hidroh.calendar.widget.AgendaAdapter;
 import io.github.hidroh.calendar.widget.AgendaView;
 import io.github.hidroh.calendar.widget.EventCalendarView;
@@ -31,12 +36,27 @@ import io.github.hidroh.calendar.widget.EventCalendarView;
 public class MainActivity extends AppCompatActivity {
 
     private static final String STATE_TOOLBAR_TOGGLE = "state:toolbarToggle";
+    private static final int REQUEST_CODE_CALENDAR = 0;
+    private static final int REQUEST_CODE_LOCATION = 1;
 
+    private final SharedPreferences.OnSharedPreferenceChangeListener mWeatherChangeListener =
+            new SharedPreferences.OnSharedPreferenceChangeListener() {
+                @Override
+                public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
+                                                      String key) {
+                    if (TextUtils.equals(key, WeatherSyncService.PREF_WEATHER_TODAY) ||
+                            TextUtils.equals(key, WeatherSyncService.PREF_WEATHER_TOMORROW)) {
+                        loadWeather();
+                    }
+                }
+            };
     private final Coordinator mCoordinator = new Coordinator();
+    private View mCoordinatorLayout;
     private CheckedTextView mToolbarToggle;
     private EventCalendarView mCalendarView;
     private AgendaView mAgendaView;
     private FloatingActionButton mFabAdd;
+    private boolean mWeatherEnabled, mPendingWeatherEnabled;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,6 +67,11 @@ public class MainActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayOptions(
                 ActionBar.DISPLAY_SHOW_HOME | ActionBar.DISPLAY_HOME_AS_UP);
         setupContentView();
+        mWeatherEnabled = mPendingWeatherEnabled = PreferenceManager
+                .getDefaultSharedPreferences(this)
+                .getBoolean(WeatherSyncService.PREF_WEATHER_ENABLED, false);
+        PreferenceManager.getDefaultSharedPreferences(this)
+                .registerOnSharedPreferenceChangeListener(mWeatherChangeListener);
     }
 
     @Override
@@ -65,17 +90,26 @@ public class MainActivity extends AppCompatActivity {
     protected void onPostCreate(@Nullable Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
         mCoordinator.coordinate(mToolbarToggle, mCalendarView, mAgendaView);
-        if (checkPermissions()) {
+        if (checkCalendarPermissions()) {
             loadEvents();
         } else {
             toggleEmptyView(true);
+        }
+        if (mWeatherEnabled && !checkLocationPermissions()) {
+            explainLocationPermissions();
         }
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_today, menu);
+        getMenuInflater().inflate(R.menu.menu_main, menu);
         return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        menu.findItem(R.id.action_weather).setChecked(mWeatherEnabled);
+        return super.onPrepareOptionsMenu(menu);
     }
 
     @Override
@@ -86,6 +120,15 @@ public class MainActivity extends AppCompatActivity {
         }
         if (item.getItemId() == R.id.action_today) {
             mCoordinator.reset();
+            return true;
+        }
+        if (item.getItemId() == R.id.action_weather) {
+            mPendingWeatherEnabled = !mWeatherEnabled;
+            if (!mWeatherEnabled && !checkLocationPermissions()) {
+                requestLocationPermissions();
+            } else {
+                toggleWeather();
+            }
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -103,21 +146,35 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
         mCalendarView.deactivate();
         mAgendaView.setAdapter(null); // force detaching adapter
+        PreferenceManager.getDefaultSharedPreferences(this)
+                .registerOnSharedPreferenceChangeListener(mWeatherChangeListener);
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (checkPermissions()) {
-            toggleEmptyView(false);
-            loadEvents();
-        } else {
-            toggleEmptyView(true);
+        switch (requestCode) {
+            case REQUEST_CODE_CALENDAR:
+                if (checkCalendarPermissions()) {
+                    toggleEmptyView(false);
+                    loadEvents();
+                } else {
+                    toggleEmptyView(true);
+                }
+                break;
+            case REQUEST_CODE_LOCATION:
+                if (checkLocationPermissions()) {
+                    toggleWeather();
+                } else {
+                    explainLocationPermissions();
+                }
+                break;
         }
     }
 
     private void setupContentView() {
+        mCoordinatorLayout = findViewById(R.id.coordinator_layout);
         mToolbarToggle = (CheckedTextView) findViewById(R.id.toolbar_toggle);
         View toggleButton = findViewById(R.id.toolbar_toggle_frame);
         if (toggleButton != null) { // can be null as disabled in landscape
@@ -159,7 +216,7 @@ public class MainActivity extends AppCompatActivity {
                     .setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
-                            requestPermissions();
+                            requestCalendarPermissions();
                         }
                     });
         } else {
@@ -171,30 +228,66 @@ public class MainActivity extends AppCompatActivity {
         startActivity(new Intent(this, EditActivity.class));
     }
 
-    private boolean checkPermissions() {
-        return (checkPermission(Manifest.permission.READ_CALENDAR) |
-                checkPermission(Manifest.permission.WRITE_CALENDAR)) ==
-                PackageManager.PERMISSION_GRANTED;
-    }
-
-    @VisibleForTesting
-    protected void requestPermissions() {
-        ActivityCompat.requestPermissions(this,
-                new String[]{
-                        Manifest.permission.READ_CALENDAR,
-                        Manifest.permission.WRITE_CALENDAR},
-                0);
-    }
-
     private void loadEvents() {
         mFabAdd.show();
         mCalendarView.setCalendarAdapter(new CalendarCursorAdapter(this));
         mAgendaView.setAdapter(new AgendaCursorAdapter(this));
+        loadWeather();
+    }
+
+    private void toggleWeather() {
+        mWeatherEnabled = mPendingWeatherEnabled;
+        PreferenceManager.getDefaultSharedPreferences(this)
+                .edit()
+                .putBoolean(WeatherSyncService.PREF_WEATHER_ENABLED, mWeatherEnabled)
+                .apply();
+        supportInvalidateOptionsMenu();
+        loadWeather();
+    }
+
+    private void loadWeather() {
+        mAgendaView.setWeather(mWeatherEnabled ? WeatherSyncService.getSyncedWeather(this) : null);
     }
 
     @VisibleForTesting
-    protected int checkPermission(@NonNull String permission) {
-        return ActivityCompat.checkSelfPermission(this, permission);
+    protected boolean checkCalendarPermissions() {
+        return (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_CALENDAR) |
+                ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_CALENDAR)) ==
+                PackageManager.PERMISSION_GRANTED;
+    }
+
+    @VisibleForTesting
+    protected boolean checkLocationPermissions() {
+        return ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    @VisibleForTesting
+    protected void requestCalendarPermissions() {
+        ActivityCompat.requestPermissions(this,
+                new String[]{
+                        Manifest.permission.READ_CALENDAR,
+                        Manifest.permission.WRITE_CALENDAR},
+                REQUEST_CODE_CALENDAR);
+    }
+
+    @VisibleForTesting
+    protected void requestLocationPermissions() {
+        ActivityCompat.requestPermissions(this,
+                new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
+                REQUEST_CODE_LOCATION);
+    }
+
+    private void explainLocationPermissions() {
+        Snackbar.make(mCoordinatorLayout, R.string.location_permission_required,
+                Snackbar.LENGTH_LONG)
+                .setAction(R.string.grant_access, new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        requestLocationPermissions();
+                    }
+                })
+                .show();
     }
 
     /**

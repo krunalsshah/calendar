@@ -1,7 +1,7 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">My Calendar</string>
     <string name="no_event">No event</string>
-    <string name="permission_required">Calendar access is required to manage your events</string>
+    <string name="calendar_permission_required">Calendar access is required to manage your events</string>
     <string name="all_day">All day</string>
     <string name="grant_access">Grant access</string>
     <string name="today">Today</string>
@@ -22,4 +22,11 @@
     <string name="event_created">Event created.</string>
     <string name="event_updated">Event updated.</string>
     <string name="event_deleted">Event deleted.</string>
+    <string name="morning">Morning</string>
+    <string name="afternoon">Afternoon</string>
+    <string name="night">Night</string>
+    <string name="fahrenheit">%1$.1f\u00b0F</string>
+    <string name="show_weather">Show weather</string>
+    <string name="updating_weather" tools:ignore="TypographyEllipsis">Updating weather information...</string>
+    <string name="location_permission_required">Updating weather requires location access</string>
 </resources>

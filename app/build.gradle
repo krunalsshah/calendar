@@ -12,6 +12,7 @@ android {
         versionCode 1
         versionName "1.0"
         vectorDrawables.useSupportLibrary = true
+        buildConfigField "String", "FORECAST_IO_API_KEY", "\"97b232a76771e4bd5fcd985da278ac0d\""
     }
 
     lintOptions {
@@ -22,6 +23,7 @@ android {
         abortOnError true
         explainIssues false
         absolutePaths false
+        ignore "InvalidPackage" // square/okio#58
     }
 
     testOptions.unitTests.all {
@@ -34,6 +36,7 @@ android {
 
 ext {
     supportVersion = '23.2.1'
+    retrofit2Version = '2.0.0'
     robolectricVersion = '3.0'
     assertjVersion = '1.1.1'
 }
@@ -41,7 +44,9 @@ ext {
 dependencies {
     compile "com.android.support:appcompat-v7:$supportVersion",
             "com.android.support:recyclerview-v7:$supportVersion",
-            "com.android.support:design:$supportVersion"
+            "com.android.support:design:$supportVersion",
+            "com.squareup.retrofit2:retrofit:$retrofit2Version",
+            "com.squareup.retrofit2:converter-gson:$retrofit2Version"
     testCompile "org.robolectric:robolectric:$robolectricVersion",
             "org.robolectric:shadows-support-v4:$robolectricVersion",
             'org.mockito:mockito-core:1.9.5+',

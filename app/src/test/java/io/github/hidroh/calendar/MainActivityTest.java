@@ -1,11 +1,9 @@
 package io.github.hidroh.calendar;
 
 import android.content.ShadowAsyncQueryHandler;
-import android.content.pm.PackageManager;
 import android.database.ContentObserver;
 import android.os.Bundle;
 import android.provider.CalendarContract;
-import android.support.annotation.NonNull;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
@@ -200,7 +198,7 @@ public class MainActivityTest {
         RecyclerView.ViewHolder viewHolder = agendaView.getAdapter().createViewHolder(
                 agendaView, agendaView.getAdapter().getItemViewType(topPosition));
         agendaView.getAdapter().bindViewHolder(viewHolder, topPosition);
-        assertThat((TextView) viewHolder.itemView)
+        assertThat((TextView) viewHolder.itemView.findViewById(R.id.text_view_title))
                 .hasTextString(CalendarUtils.toDayString(activity,
                         topDayMillis));
     }
@@ -216,10 +214,9 @@ public class MainActivityTest {
     }
 
     static class TestMainActivity extends MainActivity {
-        int permissionCheckResult = PackageManager.PERMISSION_GRANTED;
         @Override
-        protected int checkPermission(@NonNull String permission) {
-            return permissionCheckResult;
+        protected boolean checkCalendarPermissions() {
+            return true;
         }
     }
 

@@ -35,10 +35,20 @@
         <item name="android:gravity">center_vertical|end</item>
     </style>
 
-    <style name="TextAppearance.AppTheme.Hint"  parent="TextAppearance.Design.Hint" />
+    <style name="TextAppearance.AppTheme.Hint" parent="TextAppearance.Design.Hint" />
 
     <style name="TextAppearance.AppTheme.Hint.Disabled">
         <item name="android:textColor">?android:attr/textColorHint</item>
+    </style>
+
+    <style name="Widget.AppTheme.TextView" />
+
+    <style name="Widget.AppTheme.TextView.Weather">
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:drawablePadding">@dimen/padding_text</item>
+        <item name="android:textAppearance">@style/TextAppearance.AppCompat.Small</item>
+        <item name="android:paddingTop">@dimen/padding_text</item>
+        <item name="android:paddingBottom">@dimen/padding_text</item>
     </style>
 
 </resources>

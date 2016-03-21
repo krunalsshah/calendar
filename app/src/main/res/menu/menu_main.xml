@@ -7,4 +7,9 @@
         android:title="@string/today"
         app:showAsAction="ifRoom" />
 
+    <item
+        android:id="@+id/action_weather"
+        android:title="@string/show_weather"
+        android:checkable="true"
+        app:showAsAction="never" />
 </menu>

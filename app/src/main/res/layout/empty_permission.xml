@@ -9,7 +9,7 @@
     tools:ignore="Overdraw">
 
     <TextView
-        android:text="@string/permission_required"
+        android:text="@string/calendar_permission_required"
         style="@style/TextAppearance.AppCompat.Headline"
         android:textColor="?android:attr/textColorPrimaryInverseNoDisable"
         android:breakStrategy="balanced"
