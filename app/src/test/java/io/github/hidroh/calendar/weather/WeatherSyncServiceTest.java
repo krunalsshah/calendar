@@ -1,5 +1,6 @@
 package io.github.hidroh.calendar.weather;
 
+import android.annotation.SuppressLint;
 import android.app.AlarmManager;
 import android.content.Context;
 import android.content.Intent;
@@ -34,6 +35,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
+@SuppressWarnings("unchecked")
 @RunWith(RobolectricGradleTestRunner.class)
 public class WeatherSyncServiceTest {
     private ServiceController<TestService> controller;
@@ -57,7 +59,6 @@ public class WeatherSyncServiceTest {
         assertThat(WeatherSyncService.getSyncedWeather(service)).isNull();
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testFetchWithException() throws IOException {
         // initial state
@@ -138,7 +139,6 @@ public class WeatherSyncServiceTest {
             throws IOException {
         Call call = mock(Call.class);
         when(call.execute()).thenReturn(Response.success(forecast));
-        //noinspection unchecked
         when(service.webService.forecast(anyDouble(), anyDouble(), anyLong())).thenReturn(call);
     }
 
@@ -164,6 +164,7 @@ public class WeatherSyncServiceTest {
         }};
     }
 
+    @SuppressLint("Registered")
     public static class TestService extends WeatherSyncService {
         ForecastIOService webService = mock(ForecastIOService.class);
         Location location = new Location("");

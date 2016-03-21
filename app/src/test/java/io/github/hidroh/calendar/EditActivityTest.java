@@ -1,5 +1,6 @@
 package io.github.hidroh.calendar;
 
+import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.Intent;
 import android.content.ShadowAsyncQueryHandler;
@@ -288,6 +289,7 @@ public class EditActivityTest {
         controller.pause().stop().destroy();
     }
 
+    @SuppressLint("Registered")
     static class TestEditActivity extends EditActivity {
         boolean permissionsResult = true;
 

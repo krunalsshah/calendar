@@ -1,5 +1,6 @@
 package io.github.hidroh.calendar;
 
+import android.annotation.SuppressLint;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.LinearLayoutManager;
@@ -149,6 +150,7 @@ public class MainActivityWeatherTest {
         return viewHolder;
     }
 
+    @SuppressLint("Registered")
     static class TestMainActivity extends MainActivity {
         boolean permissionCheckResult = false;
         final PermissionRequester permissionRequester = mock(PermissionRequester.class);

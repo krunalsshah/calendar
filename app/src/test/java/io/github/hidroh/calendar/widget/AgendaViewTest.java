@@ -1,5 +1,6 @@
 package io.github.hidroh.calendar.widget;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.annotation.Nullable;
@@ -345,6 +346,7 @@ public class AgendaViewTest {
         return viewHolder;
     }
 
+    @SuppressLint("Registered")
     static class TestActivity extends AppCompatActivity {
         LongSparseArray<EventCursor> cursors = new LongSparseArray<>();
 

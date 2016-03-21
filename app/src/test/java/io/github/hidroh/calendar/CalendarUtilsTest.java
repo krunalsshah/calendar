@@ -23,7 +23,7 @@ public class CalendarUtilsTest {
 
     @Test
     public void testToday() {
-        long actual = CalendarUtils.today(), now = System.currentTimeMillis();
+        long actual = CalendarUtils.today();
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(actual);
         assertThat(calendar.get(Calendar.HOUR_OF_DAY)).isEqualTo(0);

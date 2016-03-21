@@ -1,5 +1,6 @@
 package io.github.hidroh.calendar;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 
 import org.junit.After;
@@ -69,6 +70,7 @@ public class MainActivityPermissionTest {
         controller.stop().destroy();
     }
 
+    @SuppressLint("Registered")
     static class TestMainActivity extends MainActivity {
         boolean permissionCheckResult = false;
         final PermissionRequester permissionRequester = mock(PermissionRequester.class);

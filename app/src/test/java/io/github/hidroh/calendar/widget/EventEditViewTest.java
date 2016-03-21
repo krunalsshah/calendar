@@ -43,7 +43,6 @@ public class EventEditViewTest {
     private ActivityController<TestActivity> controller;
     private TestActivity activity;
     private EventEditView view;
-    private TextInputLayout textInputTitle;
     private EditText editTextTitle;
     private SwitchCompat switchAllDay;
     private TextView textViewStartDate;
@@ -59,7 +58,6 @@ public class EventEditViewTest {
         activity = controller.create().start().resume().get();
         view = (EventEditView) activity.findViewById(R.id.event_edit_view);
         //noinspection ConstantConditions
-        textInputTitle = (TextInputLayout) view.findViewById(R.id.text_input_title);
         editTextTitle = (EditText) view.findViewById(R.id.edit_text_title);
         switchAllDay = (SwitchCompat) view.findViewById(R.id.switch_all_day);
         textViewStartDate = (TextView) view.findViewById(R.id.text_view_start_date);

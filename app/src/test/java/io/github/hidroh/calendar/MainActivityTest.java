@@ -1,5 +1,6 @@
 package io.github.hidroh.calendar;
 
+import android.annotation.SuppressLint;
 import android.content.ShadowAsyncQueryHandler;
 import android.database.ContentObserver;
 import android.os.Bundle;
@@ -213,6 +214,7 @@ public class MainActivityTest {
         assertThat(activity.findViewById(R.id.calendar_view)).isNotVisible();
     }
 
+    @SuppressLint("Registered")
     static class TestMainActivity extends MainActivity {
         @Override
         protected boolean checkCalendarPermissions() {
