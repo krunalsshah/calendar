@@ -21,7 +21,6 @@ Simple event calendar, with agenda view.
 
 ## Discussions:
 Scope and conventions:
-* Assume week starts on Sunday
 * Assume local time zone (device time zone) for UI display
 * No recurring events supported
 * No attendees information

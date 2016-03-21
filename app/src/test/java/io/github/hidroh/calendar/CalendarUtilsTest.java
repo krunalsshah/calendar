@@ -199,7 +199,12 @@ public class CalendarUtilsTest {
         Calendar march = Calendar.getInstance();
         march.set(2016, Calendar.MARCH, 1);
         assertThat(CalendarUtils.monthFirstDayOffset(march.getTimeInMillis()))
-                .isEqualTo(2); // Tues - Sun
+                .isEqualTo(2); // [Sun, Mon] Tue
+        int original = CalendarUtils.sWeekStart;
+        CalendarUtils.sWeekStart = Calendar.SATURDAY;
+        assertThat(CalendarUtils.monthFirstDayOffset(march.getTimeInMillis()))
+                .isEqualTo(3); // [Sat, Sun, Mon] Tue
+        CalendarUtils.sWeekStart = original;
         Locale.setDefault(defaultLocale);
     }
 

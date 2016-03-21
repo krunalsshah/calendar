@@ -29,4 +29,8 @@
     <string name="show_weather">Show weather</string>
     <string name="updating_weather" tools:ignore="TypographyEllipsis">Updating weather information...</string>
     <string name="location_permission_required">Updating weather requires location access</string>
+    <string name="week_start">Week start</string>
+    <string name="saturday">Saturday</string>
+    <string name="sunday">Sunday</string>
+    <string name="monday">Monday</string>
 </resources>

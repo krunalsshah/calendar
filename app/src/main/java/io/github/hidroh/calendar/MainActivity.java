@@ -8,6 +8,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.annotation.IdRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
@@ -25,6 +26,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.CheckedTextView;
 import android.widget.TextView;
+
+import java.util.Calendar;
 
 import io.github.hidroh.calendar.content.EventCursor;
 import io.github.hidroh.calendar.content.EventsQueryHandler;
@@ -61,17 +64,13 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setUpPreferences();
         setContentView(R.layout.activity_main);
         setSupportActionBar((Toolbar) findViewById(R.id.toolbar));
         //noinspection ConstantConditions
         getSupportActionBar().setDisplayOptions(
                 ActionBar.DISPLAY_SHOW_HOME | ActionBar.DISPLAY_HOME_AS_UP);
-        setupContentView();
-        mWeatherEnabled = mPendingWeatherEnabled = PreferenceManager
-                .getDefaultSharedPreferences(this)
-                .getBoolean(WeatherSyncService.PREF_WEATHER_ENABLED, false);
-        PreferenceManager.getDefaultSharedPreferences(this)
-                .registerOnSharedPreferenceChangeListener(mWeatherChangeListener);
+        setUpContentView();
     }
 
     @Override
@@ -109,6 +108,17 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         menu.findItem(R.id.action_weather).setChecked(mWeatherEnabled);
+        switch (CalendarUtils.sWeekStart) {
+            case Calendar.SATURDAY:
+                menu.findItem(R.id.action_week_start_saturday).setChecked(true);
+                break;
+            case Calendar.SUNDAY:
+                menu.findItem(R.id.action_week_start_sunday).setChecked(true);
+                break;
+            case Calendar.MONDAY:
+                menu.findItem(R.id.action_week_start_monday).setChecked(true);
+                break;
+        }
         return super.onPrepareOptionsMenu(menu);
     }
 
@@ -128,6 +138,14 @@ public class MainActivity extends AppCompatActivity {
                 requestLocationPermissions();
             } else {
                 toggleWeather();
+            }
+            return true;
+        }
+        if (item.getItemId() == R.id.action_week_start_saturday ||
+                item.getItemId() == R.id.action_week_start_sunday ||
+                item.getItemId() == R.id.action_week_start_monday) {
+            if (!item.isChecked()) {
+                changeWeekStart(item.getItemId());
             }
             return true;
         }
@@ -173,7 +191,16 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void setupContentView() {
+    private void setUpPreferences() {
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+        mWeatherEnabled = mPendingWeatherEnabled = sp.getBoolean(
+                WeatherSyncService.PREF_WEATHER_ENABLED, false);
+        CalendarUtils.sWeekStart = sp.getInt(CalendarUtils.PREF_WEEK_START, Calendar.SUNDAY);
+        PreferenceManager.getDefaultSharedPreferences(this)
+                .registerOnSharedPreferenceChangeListener(mWeatherChangeListener);
+    }
+
+    private void setUpContentView() {
         mCoordinatorLayout = findViewById(R.id.coordinator_layout);
         mToolbarToggle = (CheckedTextView) findViewById(R.id.toolbar_toggle);
         View toggleButton = findViewById(R.id.toolbar_toggle_frame);
@@ -222,6 +249,26 @@ public class MainActivity extends AppCompatActivity {
         } else {
             findViewById(R.id.empty).setVisibility(View.GONE);
         }
+    }
+
+    private void changeWeekStart(@IdRes int selection) {
+        switch (selection) {
+            case R.id.action_week_start_saturday:
+                CalendarUtils.sWeekStart = Calendar.SATURDAY;
+                break;
+            case R.id.action_week_start_sunday:
+                CalendarUtils.sWeekStart = Calendar.SUNDAY;
+                break;
+            case R.id.action_week_start_monday:
+                CalendarUtils.sWeekStart = Calendar.MONDAY;
+                break;
+        }
+        PreferenceManager.getDefaultSharedPreferences(this)
+                .edit()
+                .putInt(CalendarUtils.PREF_WEEK_START, CalendarUtils.sWeekStart)
+                .apply();
+        supportInvalidateOptionsMenu();
+        mCoordinator.reset();
     }
 
     private void createEvent() {
@@ -381,7 +428,8 @@ public class MainActivity extends AppCompatActivity {
 
     static class AgendaCursorAdapter extends AgendaAdapter {
 
-        private final DayEventsQueryHandler mHandler;
+        @VisibleForTesting
+        final DayEventsQueryHandler mHandler;
 
         public AgendaCursorAdapter(Context context) {
             super(context);

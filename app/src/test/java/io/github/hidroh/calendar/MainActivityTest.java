@@ -1,9 +1,9 @@
 package io.github.hidroh.calendar;
 
 import android.annotation.SuppressLint;
-import android.content.ShadowAsyncQueryHandler;
 import android.database.ContentObserver;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.provider.CalendarContract;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -19,12 +19,12 @@ import org.robolectric.Robolectric;
 import org.robolectric.RobolectricGradleTestRunner;
 import org.robolectric.annotation.Config;
 import org.robolectric.fakes.RoboCursor;
-import org.robolectric.fakes.RoboMenu;
 import org.robolectric.internal.ShadowExtractor;
 import org.robolectric.shadows.ShadowApplication;
 import org.robolectric.util.ActivityController;
 
 import java.util.Arrays;
+import java.util.Calendar;
 
 import io.github.hidroh.calendar.content.EventCursor;
 import io.github.hidroh.calendar.test.shadows.ShadowLinearLayoutManager;
@@ -33,12 +33,13 @@ import io.github.hidroh.calendar.test.shadows.ShadowViewPager;
 import io.github.hidroh.calendar.widget.AgendaView;
 import io.github.hidroh.calendar.widget.EventCalendarView;
 
+import static junit.framework.Assert.assertTrue;
 import static org.assertj.android.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.robolectric.Shadows.shadowOf;
 
 @SuppressWarnings("unchecked")
-@Config(shadows = {ShadowViewPager.class, ShadowRecyclerView.class, ShadowLinearLayoutManager.class, ShadowAsyncQueryHandler.class})
+@Config(shadows = {ShadowViewPager.class, ShadowRecyclerView.class, ShadowLinearLayoutManager.class})
 @RunWith(RobolectricGradleTestRunner.class)
 public class MainActivityTest {
     private ActivityController<TestMainActivity> controller;
@@ -51,7 +52,7 @@ public class MainActivityTest {
     @Before
     public void setUp() {
         controller = Robolectric.buildActivity(TestMainActivity.class);
-        controller.create().start().postCreate(null).resume();
+        controller.create().start().postCreate(null).resume().visible();
         activity = controller.get();
         toggle = (CheckedTextView) activity.findViewById(R.id.toolbar_toggle);
         toggleButton = activity.findViewById(R.id.toolbar_toggle_frame);
@@ -130,7 +131,6 @@ public class MainActivityTest {
     @Test
     public void testOptionsItemBack() {
         assertThat(activity).isNotFinishing();
-        activity.onCreateOptionsMenu(new RoboMenu(activity));
         shadowOf(activity).clickMenuItem(android.R.id.home);
         assertThat(activity).isFinishing();
     }
@@ -148,10 +148,40 @@ public class MainActivityTest {
                 CalendarUtils.today()));
 
         // selecting today option should reset to today
-        activity.onCreateOptionsMenu(new RoboMenu(activity));
         shadowOf(activity).clickMenuItem(R.id.action_today);
         assertTitle(CalendarUtils.today());
         assertThat(calendarView.getCurrentItem()).isEqualTo(initialCalendarPage);
+    }
+
+    @Test
+    public void testOptionsItemWeekStart() {
+        // initial state
+        assertThat(CalendarUtils.sWeekStart).isEqualTo(Calendar.SUNDAY);
+        assertTrue(shadowOf(activity).getOptionsMenu().findItem(R.id.action_week_start_sunday)
+                .isChecked());
+
+        // changing week start should persist selection
+        shadowOf(activity).clickMenuItem(R.id.action_week_start_monday);
+        assertThat(CalendarUtils.sWeekStart).isEqualTo(Calendar.MONDAY);
+        assertThat(PreferenceManager.getDefaultSharedPreferences(activity)
+                .getInt(CalendarUtils.PREF_WEEK_START, Calendar.SUNDAY))
+                .isEqualTo(Calendar.MONDAY);
+
+        // checking the previous selection should not change selection
+        shadowOf(activity).clickMenuItem(R.id.action_week_start_monday);
+        assertThat(CalendarUtils.sWeekStart).isEqualTo(Calendar.MONDAY);
+
+        shadowOf(activity).clickMenuItem(R.id.action_week_start_saturday);
+        assertThat(CalendarUtils.sWeekStart).isEqualTo(Calendar.SATURDAY);
+        assertThat(PreferenceManager.getDefaultSharedPreferences(activity)
+                .getInt(CalendarUtils.PREF_WEEK_START, Calendar.SUNDAY))
+                .isEqualTo(Calendar.SATURDAY);
+
+        shadowOf(activity).clickMenuItem(R.id.action_week_start_sunday);
+        assertThat(CalendarUtils.sWeekStart).isEqualTo(Calendar.SUNDAY);
+        assertThat(PreferenceManager.getDefaultSharedPreferences(activity)
+                .getInt(CalendarUtils.PREF_WEEK_START, Calendar.MONDAY))
+                .isEqualTo(Calendar.SUNDAY);
     }
 
     @Test
@@ -164,13 +194,19 @@ public class MainActivityTest {
                 .setCursor(CalendarContract.Events.CONTENT_URI, cursor);
 
         // trigger loading from provider
+        int firstPosition = ((LinearLayoutManager) agendaView.getLayoutManager())
+                .findFirstVisibleItemPosition();
         agendaView.getAdapter().bindViewHolder(agendaView.getAdapter()
-                .createViewHolder(agendaView, agendaView.getAdapter().getItemViewType(0)), 0);
+                .createViewHolder(agendaView, agendaView.getAdapter().
+                        getItemViewType(firstPosition)), firstPosition);
+        ((MainActivity.AgendaCursorAdapter) agendaView.getAdapter())
+                .mHandler.handleQueryComplete(0, CalendarUtils.today(), new EventCursor(cursor));
 
         // binding from provider should replace placeholder
         RecyclerView.ViewHolder viewHolder = agendaView.getAdapter()
-                .createViewHolder(agendaView, agendaView.getAdapter().getItemViewType(1));
-        agendaView.getAdapter().bindViewHolder(viewHolder, 1);
+                .createViewHolder(agendaView, agendaView.getAdapter()
+                        .getItemViewType(firstPosition + 1));
+        agendaView.getAdapter().bindViewHolder(viewHolder, firstPosition + 1);
         assertThat((TextView) viewHolder.itemView.findViewById(R.id.text_view_title))
                 .hasTextString("Event 1");
     }

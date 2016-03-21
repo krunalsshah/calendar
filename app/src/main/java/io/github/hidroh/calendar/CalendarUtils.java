@@ -22,9 +22,15 @@ public class CalendarUtils {
      */
     public static final String TIMEZONE_UTC = "UTC";
     /**
-     * Constant value for week start
+     * {@link android.content.SharedPreferences} int value for week start
+     * @see {@link #sWeekStart}
      */
-    public static final int WEEK_START = Calendar.SUNDAY;
+    public static final String PREF_WEEK_START = "weekStart";
+    /**
+     * Static value for week start
+     * @see {@link #PREF_WEEK_START}
+     */
+    public static int sWeekStart = Calendar.SUNDAY;
 
     /**
      * Checks if given timestamp is a valid time
@@ -224,8 +230,10 @@ public class CalendarUtils {
     }
 
     /**
-     * Gets first day offset for given month
+     * Gets first day offset for given month,
+     * or number of 'empty' days in first week until first day of month
      * E.g. if first day of week is Sunday, and first day of month is Tuesday, offset is 2
+     * E.g. if first day of week is Monday, and first day of month is Sunday, offset is 6
      * @param monthMillis    month in milliseconds
      * @return  first day offset or 0 if month is not valid
      */
@@ -236,6 +244,9 @@ public class CalendarUtils {
         DateOnlyCalendar calendar = DateOnlyCalendar.fromTime(monthMillis);
         //noinspection ConstantConditions
         int offset = calendar.get(Calendar.DAY_OF_WEEK) - calendar.getFirstDayOfWeek();
+        if (offset < 0) {
+            offset = 7 + offset;
+        }
         calendar.recycle();
         return offset;
     }
@@ -303,7 +314,7 @@ public class CalendarUtils {
             dateOnlyCalendar.setTimeInMillis(timeMillis);
             dateOnlyCalendar.stripTime();
             //noinspection WrongConstant
-            dateOnlyCalendar.setFirstDayOfWeek(WEEK_START);
+            dateOnlyCalendar.setFirstDayOfWeek(sWeekStart);
             return dateOnlyCalendar;
         }
 

@@ -162,8 +162,21 @@ class MonthView extends RecyclerView {
         @Override
         public void onBindViewHolder(CellViewHolder holder, int position) {
             if (holder instanceof HeaderViewHolder) {
-                ((HeaderViewHolder) holder).textView.setText(
-                        mWeekdays[position + CalendarUtils.WEEK_START]);
+                int index;
+                switch (CalendarUtils.sWeekStart) {
+                    case Calendar.SATURDAY:
+                        index = position == 0 ? Calendar.SATURDAY : position;
+                        break;
+                    case Calendar.SUNDAY:
+                    default:
+                        index = position + Calendar.SUNDAY;
+                        break;
+                    case Calendar.MONDAY:
+                        index = position + Calendar.MONDAY == mWeekdays.length ?
+                                Calendar.SUNDAY : position + Calendar.MONDAY;
+                        break;
+                }
+                ((HeaderViewHolder) holder).textView.setText(mWeekdays[index]);
             } else { // holder instanceof ContentViewHolder
                 if (position < mStartOffset) {
                     ((ContentViewHolder) holder).textView.setText(null);
