@@ -51,4 +51,8 @@
         <item name="android:paddingBottom">@dimen/padding_text</item>
     </style>
 
+    <style name="Widget.AppTheme.Drawer">
+        <item name="android:layout_width">match_parent</item>
+    </style>
+
 </resources>
