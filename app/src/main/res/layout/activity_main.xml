@@ -38,6 +38,8 @@
             android:layout_gravity="start"
             android:orientation="vertical"
             android:background="?android:attr/colorBackground"
+            android:divider="@drawable/horizontal_divider"
+            android:showDividers="middle"
             android:layout_width="wrap_content"
             android:layout_height="match_parent">
 
