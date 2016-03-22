@@ -10,6 +10,8 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
+import android.os.Handler;
+import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
@@ -54,6 +56,8 @@ public class WeatherSyncService extends IntentService {
     public static final String TAG = WeatherSyncService.class.getName();
     private static final int[] HOUR_INDICES = new int[]{8, 14, 20};
     private static final String SEPARATOR = "|";
+    // indicate if service is trigger while UI is active, not from alarm
+    private static final String EXTRA_ACTIVE = "extra:active";
 
     private ForecastIOService mForecastService;
 
@@ -70,7 +74,8 @@ public class WeatherSyncService extends IntentService {
         // initiate a new remote fetch if some sync data are missing
         if (today == null || tomorrow == null) {
             Toast.makeText(context, R.string.updating_weather, Toast.LENGTH_SHORT).show();
-            context.startService(new Intent(context, WeatherSyncService.class));
+            context.startService(new Intent(context, WeatherSyncService.class)
+                    .putExtra(EXTRA_ACTIVE, true));
             return null;
         } else {
             return new Weather(today, tomorrow);
@@ -137,6 +142,9 @@ public class WeatherSyncService extends IntentService {
             return;
         }
         Location location = getLocation();
+        if (location == null && intent.getBooleanExtra(EXTRA_ACTIVE, false)) {
+            notifyLocationError();
+        }
         long todaySeconds = CalendarUtils.today() / DateUtils.SECOND_IN_MILLIS,
                 tomorrowSeconds = todaySeconds + DateUtils.DAY_IN_MILLIS / DateUtils.SECOND_IN_MILLIS;
         persist(fetchForecast(location, todaySeconds), PREF_WEATHER_TODAY);
@@ -159,6 +167,16 @@ public class WeatherSyncService extends IntentService {
                 Calendar.getInstance().getTimeInMillis() + AlarmManager.INTERVAL_DAY,
                 PendingIntent.getBroadcast(this, 0,
                         new Intent(this, WeatherSyncAlarmReceiver.class), 0));
+    }
+
+    private void notifyLocationError() {
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(WeatherSyncService.this, R.string.error_location,
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     @VisibleForTesting

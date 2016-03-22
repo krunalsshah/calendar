@@ -36,4 +36,5 @@
     <string name="open_drawer">Open drawer</string>
     <string name="close_drawer">Close drawer</string>
     <string name="calendars">Calendars</string>
+    <string name="error_location">Unable to determine your location</string>
 </resources>
