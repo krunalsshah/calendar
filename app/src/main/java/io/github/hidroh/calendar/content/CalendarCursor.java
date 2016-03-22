@@ -4,8 +4,14 @@ import android.database.Cursor;
 import android.database.CursorWrapper;
 import android.provider.CalendarContract;
 
+/**
+ * {@link android.provider.CalendarContract.Calendars} cursor wrapper
+ */
 public class CalendarCursor extends CursorWrapper {
 
+    /**
+     * {@link android.provider.CalendarContract.Calendars} query projection
+     */
     public static final String[] PROJECTION = new String[]{
             CalendarContract.Calendars._ID,
             CalendarContract.Calendars.CALENDAR_DISPLAY_NAME
@@ -17,10 +23,18 @@ public class CalendarCursor extends CursorWrapper {
         super(cursor);
     }
 
+    /**
+     * Gets calendar ID
+     * @return  calendar ID
+     */
     public long getId() {
         return getLong(PROJECTION_INDEX_ID);
     }
 
+    /**
+     * Gets calendar display name
+     * @return  calendar display name
+     */
     public String getDisplayName() {
         return getString(PROJECTION_INDEX_DISPLAY_NAME);
     }

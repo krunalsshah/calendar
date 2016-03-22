@@ -3,10 +3,15 @@ package io.github.hidroh.calendar.content;
 import android.content.AsyncQueryHandler;
 import android.content.ContentResolver;
 import android.database.Cursor;
+import android.net.Uri;
 import android.provider.CalendarContract;
 
 import io.github.hidroh.calendar.CalendarUtils;
 
+/**
+ * Calendar Provider {@link AsyncQueryHandler} that queries for events
+ * in a given time period
+ */
 public abstract class EventsQueryHandler extends AsyncQueryHandler {
 
     private static final String SORT = CalendarContract.Events.DTSTART + " ASC";
@@ -44,6 +49,15 @@ public abstract class EventsQueryHandler extends AsyncQueryHandler {
         super(cr);
     }
 
+    /**
+     * Starts background query for events from given start time to given end time
+     * Results will be handled asynchronously on main thread
+     * via {@link #handleQueryComplete(int, Object, EventCursor)}
+     * @param cookie             cookie object to be passed back on complete
+     * @param startTimeMillis    start time in milliseconds
+     * @param endTimeMillis      end time in milliseconds
+     * @see {@link #handleQueryComplete(int, Object, EventCursor)}
+     */
     public final void startQuery(Object cookie, long startTimeMillis, long endTimeMillis) {
         String utcStart = String.valueOf(CalendarUtils.toUtcTimeZone(startTimeMillis)),
                 utcEnd = String.valueOf(CalendarUtils.toUtcTimeZone(endTimeMillis)),
@@ -71,5 +85,12 @@ public abstract class EventsQueryHandler extends AsyncQueryHandler {
         handleQueryComplete(token, cookie, new EventCursor(cursor));
     }
 
+    /**
+     * Handles query results. This will be called on main thread.
+     * @param token     query token
+     * @param cookie    query cookie
+     * @param cursor    {@link android.provider.CalendarContract.Events} cursor wrapper
+     * @see {@link #startQuery(int, Object, Uri, String[], String, String[], String)}
+     */
     protected abstract void handleQueryComplete(int token, Object cookie, EventCursor cursor);
 }
