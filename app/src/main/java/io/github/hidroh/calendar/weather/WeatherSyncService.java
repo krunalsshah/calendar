@@ -129,6 +129,7 @@ public class WeatherSyncService extends IntentService {
     @Override
     protected void onHandleIntent(Intent intent) {
         cancelScheduledAlarm();
+        // TODO clear and skip next alarm if disabled
         Location location = getLocation();
         long todaySeconds = CalendarUtils.today() / DateUtils.SECOND_IN_MILLIS,
                 tomorrowSeconds = todaySeconds + DateUtils.DAY_IN_MILLIS / DateUtils.SECOND_IN_MILLIS;

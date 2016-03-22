@@ -5,6 +5,8 @@ import android.database.ContentObserver;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.provider.CalendarContract;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
@@ -129,9 +131,18 @@ public class MainActivityTest {
     }
 
     @Test
-    public void testOptionsItemBack() {
+    public void testOnBackPressed() {
+        // initial state
         assertThat(activity).isNotFinishing();
-        shadowOf(activity).clickMenuItem(android.R.id.home);
+
+        // pressing back should close open drawer first
+        //noinspection ConstantConditions
+        ((DrawerLayout) activity.findViewById(R.id.drawer_layout)).openDrawer(GravityCompat.START);
+        activity.onBackPressed();
+        assertThat(activity).isNotFinishing();
+
+        // pressing back with no open drawer should finish activity
+        activity.onBackPressed();
         assertThat(activity).isFinishing();
     }
 

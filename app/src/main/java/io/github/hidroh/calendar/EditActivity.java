@@ -42,9 +42,6 @@ public class EditActivity extends AppCompatActivity implements LoaderManager.Loa
     private static final String EXTRA_CALENDAR_ID = "extra:calendarId";
     private static final int LOADER_CALENDARS = 0;
     private static final int LOADER_SELECTED_CALENDAR = 1;
-    private static final int LOADER_LOCAL_CALENDAR = 2;
-    private static final int TOKEN_EVENT = 0;
-    private static final int TOKEN_CALENDAR = 1;
 
     private EventEditView mEventEditView;
 
@@ -82,7 +79,6 @@ public class EditActivity extends AppCompatActivity implements LoaderManager.Loa
         }
         setTitle(event.hasId() ? R.string.edit_event : R.string.create_event);
         getSupportLoaderManager().initLoader(LOADER_CALENDARS, null, this);
-        getSupportLoaderManager().initLoader(LOADER_LOCAL_CALENDAR, null, this);
     }
 
     @Override
@@ -153,9 +149,6 @@ public class EditActivity extends AppCompatActivity implements LoaderManager.Loa
         if (id == LOADER_SELECTED_CALENDAR) {
             selection = CalendarContract.Calendars._ID + "=?";
             selectionArgs = new String[]{String.valueOf(args.getLong(EXTRA_CALENDAR_ID))};
-        } else if (id == LOADER_LOCAL_CALENDAR) {
-            selection = CalendarContract.Calendars.ACCOUNT_TYPE + "=?";
-            selectionArgs = new String[]{String.valueOf(CalendarContract.ACCOUNT_TYPE_LOCAL)};
         }
         return new CursorLoader(this, CalendarContract.Calendars.CONTENT_URI,
                 CalendarCursor.PROJECTION,
@@ -169,11 +162,6 @@ public class EditActivity extends AppCompatActivity implements LoaderManager.Loa
             case LOADER_CALENDARS:
                 if (data != null && data.moveToFirst()) {
                     mEventEditView.swapCalendarSource(new CalendarCursor(data));
-                }
-                break;
-            case LOADER_LOCAL_CALENDAR:
-                if (data == null || data.getCount() == 0) {
-                    createLocalCalendar();
                 }
                 break;
             case LOADER_SELECTED_CALENDAR:
@@ -229,10 +217,10 @@ public class EditActivity extends AppCompatActivity implements LoaderManager.Loa
             Uri uri = ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI,
                     event.getId());
             new EventQueryHandler(this)
-                    .startUpdate(TOKEN_EVENT, null, uri, cv, null, null);
+                    .startUpdate(0, null, uri, cv, null, null);
         } else {
             new EventQueryHandler(this)
-                    .startInsert(TOKEN_EVENT, null, CalendarContract.Events.CONTENT_URI, cv);
+                    .startInsert(0, null, CalendarContract.Events.CONTENT_URI, cv);
         }
         return true;
     }
@@ -265,33 +253,10 @@ public class EditActivity extends AppCompatActivity implements LoaderManager.Loa
     }
 
     private void delete() {
-        new EventQueryHandler(this).startDelete(TOKEN_EVENT, null,
+        new EventQueryHandler(this).startDelete(0, null,
                 ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI,
                         mEventEditView.getEvent().getId()),
                 null, null);
-    }
-
-    private void createLocalCalendar() {
-        String name = getString(R.string.default_calendar_name);
-        ContentValues cv = new ContentValues();
-        cv.put(CalendarContract.Calendars.ACCOUNT_NAME, BuildConfig.APPLICATION_ID);
-        cv.put(CalendarContract.Calendars.ACCOUNT_TYPE, CalendarContract.ACCOUNT_TYPE_LOCAL);
-        cv.put(CalendarContract.Calendars.NAME, name);
-        cv.put(CalendarContract.Calendars.CALENDAR_DISPLAY_NAME, name);
-        cv.put(CalendarContract.Calendars.CALENDAR_COLOR, 0);
-        cv.put(CalendarContract.Calendars.CALENDAR_ACCESS_LEVEL,
-                CalendarContract.Calendars.CAL_ACCESS_OWNER);
-        cv.put(CalendarContract.Calendars.OWNER_ACCOUNT, BuildConfig.APPLICATION_ID);
-        new EventQueryHandler(this)
-                .startInsert(TOKEN_CALENDAR, null, CalendarContract.Calendars.CONTENT_URI
-                        .buildUpon()
-                        .appendQueryParameter(CalendarContract.CALLER_IS_SYNCADAPTER, "1")
-                        .appendQueryParameter(CalendarContract.Calendars.ACCOUNT_NAME,
-                                BuildConfig.APPLICATION_ID)
-                        .appendQueryParameter(CalendarContract.Calendars.ACCOUNT_TYPE,
-                                CalendarContract.ACCOUNT_TYPE_LOCAL)
-                        .build()
-                        , cv);
     }
 
     static class EventQueryHandler extends AsyncQueryHandler {
@@ -305,7 +270,7 @@ public class EditActivity extends AppCompatActivity implements LoaderManager.Loa
 
         @Override
         protected void onInsertComplete(int token, Object cookie, Uri uri) {
-            if (token == TOKEN_EVENT && mContext.get() != null) {
+            if (mContext.get() != null) {
                 Toast.makeText(mContext.get(), R.string.event_created, Toast.LENGTH_SHORT).show();
             }
         }

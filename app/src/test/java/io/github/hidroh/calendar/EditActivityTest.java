@@ -22,12 +22,10 @@ import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 import org.robolectric.fakes.RoboCursor;
 import org.robolectric.shadows.ShadowApplication;
-import org.robolectric.shadows.ShadowContentResolver;
 import org.robolectric.shadows.ShadowDialog;
 import org.robolectric.util.ActivityController;
 
 import java.util.Arrays;
-import java.util.List;
 
 import io.github.hidroh.calendar.content.CalendarCursor;
 import io.github.hidroh.calendar.widget.EventEditView;
@@ -271,19 +269,6 @@ public class EditActivityTest {
                 .getEvent().getTitle()).contains("title");
     }
 
-    @Test
-    public void testCreateLocalCalendar() {
-        shadowOf(ShadowApplication.getInstance().getContentResolver())
-                .setCursor(CalendarContract.Calendars.CONTENT_URI, new TestRoboCursor());
-        controller.create().start().resume().visible();
-        List<ShadowContentResolver.InsertStatement> inserts =
-                shadowOf(ShadowApplication.getInstance()
-                        .getContentResolver())
-                        .getInsertStatements();
-        assertThat(inserts).hasSize(1);
-        assertThat(inserts.get(0).getUri().toString())
-                .contains(CalendarContract.Calendars.CONTENT_URI.toString());
-    }
     @After
     public void tearDown() {
         controller.pause().stop().destroy();

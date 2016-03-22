@@ -136,7 +136,7 @@ public class EventCalendarView extends ViewPager {
     }
 
     /**
-     * Deactivates any active data bindings from adapter
+     * Clears any active data bindings from adapter
      * @see {@link #setCalendarAdapter(CalendarAdapter)}
      */
     public void deactivate() {
@@ -144,7 +144,17 @@ public class EventCalendarView extends ViewPager {
     }
 
     /**
-     * Resets view to initial state, clears previous bindings if any
+     * Clears any active data bindings from adapter,
+     * but keeps view state and triggers rebinding data
+     */
+    public void invalidateData() {
+        mPagerAdapter.invalidate();
+        loadEvents(getCurrentItem());
+    }
+
+    /**
+     * Clears any active data bindings from adapter,
+     * resets view state to initial state and triggers rebinding data
      */
     public void reset() {
         deactivate();

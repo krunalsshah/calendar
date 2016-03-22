@@ -33,4 +33,7 @@
     <string name="saturday">Saturday</string>
     <string name="sunday">Sunday</string>
     <string name="monday">Monday</string>
+    <string name="open_drawer">Open drawer</string>
+    <string name="close_drawer">Close drawer</string>
+    <string name="calendars">Calendars</string>
 </resources>

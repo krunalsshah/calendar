@@ -144,7 +144,7 @@ public class AgendaView extends RecyclerView {
     }
 
     /**
-     * Resets view to initial state, clears previous bindings if any
+     * Clears previous bindings if any, resets view to initial state and triggers rebinding data
      */
     public void reset() {
         // clear view state
@@ -159,6 +159,15 @@ public class AgendaView extends RecyclerView {
             mAdapter.append(getContext());
             mAdapter.notifyItemRangeInserted(0, mAdapter.getItemCount());
             setSelectedDay(CalendarUtils.today());
+        }
+    }
+
+    /**
+     * Clears previous bindings if any, but keeps view state and triggers rebinding data
+     */
+    public void invalidateData() {
+        if (mAdapter != null) {
+            mAdapter.invalidate();
         }
     }
 

@@ -80,6 +80,11 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
     }
 
     @Override
+    public void onDetachedFromRecyclerView(RecyclerView recyclerView) {
+        deactivate();
+    }
+
+    @Override
     public final RowViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         switch (viewType) {
             case VIEW_TYPE_HEADER:
@@ -160,11 +165,23 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
 
     /**
      * Closes bound cursors and unregisters their observers
-     * that have been previously bound by {@link #bindEvents(long, EventCursor)}
+     * that have been previously bound by {@link #bindEvents(long, EventCursor)},
+     * wipes all adapter data
      * @see {@link #bindEvents(long, EventCursor)}
      */
-    public final void deactivate() {
+    void deactivate() {
         mEventGroups.clear();
+    }
+
+    /**
+     * Closes bound cursors and unregisters their observers
+     * that have been previously bound by {@link #bindEvents(long, EventCursor)},
+     * but keeps adapter data to rebind new cursors
+     * @see {@link #bindEvents(long, EventCursor)}
+     */
+    void invalidate() {
+        mEventGroups.invalidate();
+        notifyItemRangeChanged(0, getItemCount());
     }
 
     /**
@@ -554,6 +571,14 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
             }
             return null;
         }
+
+        void invalidate() {
+            for (EventGroup group : this) {
+                mChildrenSize -= group.itemCount();
+                group.deactivate();
+                mChildrenSize += group.itemCount();
+            }
+        }
     }
 
     static abstract class AdapterItem implements Parcelable {
@@ -646,6 +671,7 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
         }
 
         void deactivate() {
+            mLastCursorCount = 0;
             if (mCursor != null) {
                 mCursor.unregisterContentObserver(mContentObserver);
                 mCursor.close();

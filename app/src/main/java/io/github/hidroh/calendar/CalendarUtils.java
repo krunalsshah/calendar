@@ -26,6 +26,7 @@ public class CalendarUtils {
      * @see {@link #sWeekStart}
      */
     public static final String PREF_WEEK_START = "weekStart";
+    public static final String PREF_CALENDAR_EXCLUSIONS = "calendarExclusions";
     /**
      * Static value for week start
      * @see {@link #PREF_WEEK_START}

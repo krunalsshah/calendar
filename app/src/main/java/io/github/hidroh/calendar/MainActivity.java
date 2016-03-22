@@ -1,13 +1,17 @@
 package io.github.hidroh.calendar;
 
 import android.Manifest;
+import android.content.AsyncQueryHandler;
 import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.provider.CalendarContract;
 import android.support.annotation.IdRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -15,9 +19,13 @@ import android.support.annotation.VisibleForTesting;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
+import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.text.format.DateUtils;
@@ -27,20 +35,28 @@ import android.view.View;
 import android.widget.CheckedTextView;
 import android.widget.TextView;
 
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collection;
+import java.util.HashSet;
 
+import io.github.hidroh.calendar.content.CalendarCursor;
 import io.github.hidroh.calendar.content.EventCursor;
 import io.github.hidroh.calendar.content.EventsQueryHandler;
 import io.github.hidroh.calendar.weather.WeatherSyncService;
 import io.github.hidroh.calendar.widget.AgendaAdapter;
 import io.github.hidroh.calendar.widget.AgendaView;
+import io.github.hidroh.calendar.widget.CalendarSelectionView;
 import io.github.hidroh.calendar.widget.EventCalendarView;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
 
     private static final String STATE_TOOLBAR_TOGGLE = "state:toolbarToggle";
     private static final int REQUEST_CODE_CALENDAR = 0;
     private static final int REQUEST_CODE_LOCATION = 1;
+    private static final String SEPARATOR = ",";
+    private static final int LOADER_CALENDARS = 0;
+    private static final int LOADER_LOCAL_CALENDAR = 1;
 
     private final SharedPreferences.OnSharedPreferenceChangeListener mWeatherChangeListener =
             new SharedPreferences.OnSharedPreferenceChangeListener() {
@@ -53,12 +69,30 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
             };
+    private final CalendarSelectionView.OnSelectionChangeListener mCalendarSelectionListener
+            = new CalendarSelectionView.OnSelectionChangeListener() {
+        @Override
+        public void onSelectionChange(long id, boolean enabled) {
+            if (!enabled) {
+                mExcludedCalendarIds.add(String.valueOf(id));
+            } else {
+                mExcludedCalendarIds.remove(String.valueOf(id));
+            }
+            mCalendarView.invalidateData();
+            mAgendaView.invalidateData();
+        }
+    };
     private final Coordinator mCoordinator = new Coordinator();
     private View mCoordinatorLayout;
     private CheckedTextView mToolbarToggle;
     private EventCalendarView mCalendarView;
     private AgendaView mAgendaView;
     private FloatingActionButton mFabAdd;
+    private CalendarSelectionView mCalendarSelectionView;
+    private ActionBarDrawerToggle mDrawerToggle;
+    private DrawerLayout mDrawerLayout;
+    private View mDrawer;
+    private final HashSet<String> mExcludedCalendarIds = new HashSet<>();
     private boolean mWeatherEnabled, mPendingWeatherEnabled;
 
     @Override
@@ -88,6 +122,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPostCreate(@Nullable Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
+        mDrawerToggle.syncState();
         mCoordinator.coordinate(mToolbarToggle, mCalendarView, mAgendaView);
         if (checkCalendarPermissions()) {
             loadEvents();
@@ -124,10 +159,6 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == android.R.id.home) {
-            finish();
-            return true;
-        }
         if (item.getItemId() == R.id.action_today) {
             mCoordinator.reset();
             return true;
@@ -149,7 +180,7 @@ public class MainActivity extends AppCompatActivity {
             }
             return true;
         }
-        return super.onOptionsItemSelected(item);
+        return mDrawerToggle.onOptionsItemSelected(item) || super.onOptionsItemSelected(item);
     }
 
     @Override
@@ -165,7 +196,21 @@ public class MainActivity extends AppCompatActivity {
         mCalendarView.deactivate();
         mAgendaView.setAdapter(null); // force detaching adapter
         PreferenceManager.getDefaultSharedPreferences(this)
+                .edit()
+                .putString(CalendarUtils.PREF_CALENDAR_EXCLUSIONS,
+                        TextUtils.join(SEPARATOR, mExcludedCalendarIds))
+                .apply();
+        PreferenceManager.getDefaultSharedPreferences(this)
                 .registerOnSharedPreferenceChangeListener(mWeatherChangeListener);
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (mDrawerLayout.isDrawerOpen(mDrawer)) {
+            mDrawerLayout.closeDrawer(mDrawer);
+        } else {
+            super.onBackPressed();
+        }
     }
 
     @Override
@@ -191,10 +236,50 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        String selection = null;
+        String[] selectionArgs = null;
+        if (id == LOADER_LOCAL_CALENDAR) {
+            selection = CalendarContract.Calendars.ACCOUNT_TYPE + "=?";
+            selectionArgs = new String[]{String.valueOf(CalendarContract.ACCOUNT_TYPE_LOCAL)};
+        }
+        return new CursorLoader(this,
+                CalendarContract.Calendars.CONTENT_URI,
+                CalendarCursor.PROJECTION, selection, selectionArgs,
+                CalendarContract.Calendars.DEFAULT_SORT_ORDER);
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        switch (loader.getId()) {
+            case LOADER_CALENDARS:
+                if (data != null && data.moveToFirst()) {
+                    mCalendarSelectionView.swapCursor(new CalendarCursor(data), mExcludedCalendarIds);
+                }
+                break;
+            case LOADER_LOCAL_CALENDAR:
+                if (data == null || data.getCount() == 0) {
+                    createLocalCalendar();
+                }
+                break;
+        }
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        mCalendarSelectionView.swapCursor(null, null);
+    }
+
     private void setUpPreferences() {
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
         mWeatherEnabled = mPendingWeatherEnabled = sp.getBoolean(
                 WeatherSyncService.PREF_WEATHER_ENABLED, false);
+        String exclusions = PreferenceManager.getDefaultSharedPreferences(this)
+                .getString(CalendarUtils.PREF_CALENDAR_EXCLUSIONS, null);
+        if (!TextUtils.isEmpty(exclusions)) {
+            mExcludedCalendarIds.addAll(Arrays.asList(exclusions.split(SEPARATOR)));
+        }
         CalendarUtils.sWeekStart = sp.getInt(CalendarUtils.PREF_WEEK_START, Calendar.SUNDAY);
         PreferenceManager.getDefaultSharedPreferences(this)
                 .registerOnSharedPreferenceChangeListener(mWeatherChangeListener);
@@ -202,6 +287,14 @@ public class MainActivity extends AppCompatActivity {
 
     private void setUpContentView() {
         mCoordinatorLayout = findViewById(R.id.coordinator_layout);
+        mCalendarSelectionView = (CalendarSelectionView) findViewById(R.id.list_view_calendar);
+        //noinspection ConstantConditions
+        mCalendarSelectionView.setOnSelectionChangeListener(mCalendarSelectionListener);
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mDrawer = findViewById(R.id.drawer);
+        mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout,
+                R.string.open_drawer, R.string.close_drawer);
+        mDrawerLayout.addDrawerListener(mDrawerToggle);
         mToolbarToggle = (CheckedTextView) findViewById(R.id.toolbar_toggle);
         View toggleButton = findViewById(R.id.toolbar_toggle_frame);
         if (toggleButton != null) { // can be null as disabled in landscape
@@ -276,9 +369,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadEvents() {
+        getSupportLoaderManager().initLoader(LOADER_CALENDARS, null, this);
+        getSupportLoaderManager().initLoader(LOADER_LOCAL_CALENDAR, null, this);
         mFabAdd.show();
-        mCalendarView.setCalendarAdapter(new CalendarCursorAdapter(this));
-        mAgendaView.setAdapter(new AgendaCursorAdapter(this));
+        mCalendarView.setCalendarAdapter(new CalendarCursorAdapter(this, mExcludedCalendarIds));
+        mAgendaView.setAdapter(new AgendaCursorAdapter(this, mExcludedCalendarIds));
         loadWeather();
     }
 
@@ -294,6 +389,29 @@ public class MainActivity extends AppCompatActivity {
 
     private void loadWeather() {
         mAgendaView.setWeather(mWeatherEnabled ? WeatherSyncService.getSyncedWeather(this) : null);
+    }
+
+    private void createLocalCalendar() {
+        String name = getString(R.string.default_calendar_name);
+        ContentValues cv = new ContentValues();
+        cv.put(CalendarContract.Calendars.ACCOUNT_NAME, BuildConfig.APPLICATION_ID);
+        cv.put(CalendarContract.Calendars.ACCOUNT_TYPE, CalendarContract.ACCOUNT_TYPE_LOCAL);
+        cv.put(CalendarContract.Calendars.NAME, name);
+        cv.put(CalendarContract.Calendars.CALENDAR_DISPLAY_NAME, name);
+        cv.put(CalendarContract.Calendars.CALENDAR_COLOR, 0);
+        cv.put(CalendarContract.Calendars.CALENDAR_ACCESS_LEVEL,
+                CalendarContract.Calendars.CAL_ACCESS_OWNER);
+        cv.put(CalendarContract.Calendars.OWNER_ACCOUNT, BuildConfig.APPLICATION_ID);
+        new CalendarQueryHandler(getContentResolver())
+                .startInsert(0, null, CalendarContract.Calendars.CONTENT_URI
+                        .buildUpon()
+                        .appendQueryParameter(CalendarContract.CALLER_IS_SYNCADAPTER, "1")
+                        .appendQueryParameter(CalendarContract.Calendars.ACCOUNT_NAME,
+                                BuildConfig.APPLICATION_ID)
+                        .appendQueryParameter(CalendarContract.Calendars.ACCOUNT_TYPE,
+                                CalendarContract.ACCOUNT_TYPE_LOCAL)
+                        .build()
+                        , cv);
     }
 
     @VisibleForTesting
@@ -432,14 +550,10 @@ public class MainActivity extends AppCompatActivity {
         @VisibleForTesting
         final DayEventsQueryHandler mHandler;
 
-        public AgendaCursorAdapter(Context context) {
+        public AgendaCursorAdapter(Context context, Collection<String> excludedCalendarIds) {
             super(context);
-            mHandler = new DayEventsQueryHandler(context.getContentResolver(), this);
-        }
-
-        @Override
-        public void onDetachedFromRecyclerView(RecyclerView recyclerView) {
-            deactivate();
+            mHandler = new DayEventsQueryHandler(context.getContentResolver(), this,
+                    excludedCalendarIds);
         }
 
         @Override
@@ -451,8 +565,9 @@ public class MainActivity extends AppCompatActivity {
     static class CalendarCursorAdapter extends EventCalendarView.CalendarAdapter {
         private final MonthEventsQueryHandler mHandler;
 
-        public CalendarCursorAdapter(Context context) {
-            mHandler = new MonthEventsQueryHandler(context.getContentResolver(), this);
+        public CalendarCursorAdapter(Context context, Collection<String> excludedCalendarIds) {
+            mHandler = new MonthEventsQueryHandler(context.getContentResolver(), this,
+                    excludedCalendarIds);
         }
 
         @Override
@@ -468,8 +583,10 @@ public class MainActivity extends AppCompatActivity {
 
         private final AgendaCursorAdapter mAgendaCursorAdapter;
 
-        public DayEventsQueryHandler(ContentResolver cr, AgendaCursorAdapter agendaCursorAdapter) {
-            super(cr);
+        public DayEventsQueryHandler(ContentResolver cr,
+                                     AgendaCursorAdapter agendaCursorAdapter,
+                                     @NonNull Collection<String> excludedCalendarIds) {
+            super(cr, excludedCalendarIds);
             mAgendaCursorAdapter = agendaCursorAdapter;
         }
 
@@ -483,14 +600,23 @@ public class MainActivity extends AppCompatActivity {
 
         private final CalendarCursorAdapter mAdapter;
 
-        public MonthEventsQueryHandler(ContentResolver cr, CalendarCursorAdapter adapter) {
-            super(cr);
+        public MonthEventsQueryHandler(ContentResolver cr,
+                                       CalendarCursorAdapter adapter,
+                                       @NonNull Collection<String> excludedCalendarIds) {
+            super(cr, excludedCalendarIds);
             mAdapter = adapter;
         }
 
         @Override
         protected void handleQueryComplete(int token, Object cookie, EventCursor cursor) {
             mAdapter.bindEvents((Long) cookie, cursor);
+        }
+    }
+
+    static class CalendarQueryHandler extends AsyncQueryHandler {
+
+        public CalendarQueryHandler(ContentResolver cr) {
+            super(cr);
         }
     }
 }

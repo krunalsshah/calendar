@@ -211,6 +211,16 @@ class MonthViewPagerAdapter extends PagerAdapter {
         }
     }
 
+    /**
+     * Deactivates all previously bound cursors and unregisters their observers,
+     * prepares views for new data bindings
+     */
+    void invalidate() {
+        for (int i = 0; i < mCursors.size(); i++) {
+            swapCursor(i, null, null);
+        }
+    }
+
     private void bindSelectedDay(int position) {
         if (mViews.get(position) != null) {
             mViews.get(position).setSelectedDay(mSelectedDayMillis);
