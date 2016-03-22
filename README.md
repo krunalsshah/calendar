@@ -77,3 +77,5 @@ Data source:
 Testing:
 * Chose Robolectric as I am already familiar and comfortable with it.
 * Relax visibilities of several fields for testing convenience. These can be avoided with dependency injection but I just keep it simple here.
+
+*Weather icons are from Meteocons set by Alessio Atzeni*
