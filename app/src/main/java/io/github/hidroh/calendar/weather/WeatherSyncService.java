@@ -129,7 +129,13 @@ public class WeatherSyncService extends IntentService {
     @Override
     protected void onHandleIntent(Intent intent) {
         cancelScheduledAlarm();
-        // TODO clear and skip next alarm if disabled
+        boolean enabled = PreferenceManager.getDefaultSharedPreferences(this)
+                .getBoolean(PREF_WEATHER_ENABLED, false);
+        if (!enabled) {
+            persist(null, PREF_WEATHER_TODAY);
+            persist(null, PREF_WEATHER_TOMORROW);
+            return;
+        }
         Location location = getLocation();
         long todaySeconds = CalendarUtils.today() / DateUtils.SECOND_IN_MILLIS,
                 tomorrowSeconds = todaySeconds + DateUtils.DAY_IN_MILLIS / DateUtils.SECOND_IN_MILLIS;

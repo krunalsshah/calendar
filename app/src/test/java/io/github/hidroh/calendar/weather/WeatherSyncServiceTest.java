@@ -5,6 +5,7 @@ import android.app.AlarmManager;
 import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
+import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.text.format.DateUtils;
 
@@ -45,6 +46,10 @@ public class WeatherSyncServiceTest {
     public void setUp() {
         controller = Robolectric.buildService(TestService.class);
         service = controller.attach().create().get();
+        PreferenceManager.getDefaultSharedPreferences(service)
+                .edit()
+                .putBoolean(WeatherSyncService.PREF_WEATHER_ENABLED, true)
+                .apply();
     }
 
     @Test
@@ -73,6 +78,7 @@ public class WeatherSyncServiceTest {
 
         assertThat(WeatherSyncService.getSyncedWeather(service)).isNull();
     }
+
     @Test
     public void testFetchForecast() throws IOException {
         // initial state
@@ -88,6 +94,22 @@ public class WeatherSyncServiceTest {
         verify(service.webService).forecast(anyDouble(), anyDouble(), eq(todaySeconds));
         verify(service.webService).forecast(anyDouble(), anyDouble(), eq(tomorrowSeconds));
         assertThat(WeatherSyncService.getSyncedWeather(service)).isNotNull();
+    }
+
+    @Test
+    public void testDisabled() {
+        // initial state
+        ShadowAlarmManager alarmManager = shadowOf((AlarmManager) service
+                .getSystemService(Context.ALARM_SERVICE));
+        assertThat(alarmManager.getScheduledAlarms()).isEmpty();
+        PreferenceManager.getDefaultSharedPreferences(service)
+                .edit()
+                .putBoolean(WeatherSyncService.PREF_WEATHER_ENABLED, false)
+                .apply();
+
+        // trigger service while disabled should not schedule another alarm
+        controller.startCommand(0, 0);
+        assertThat(alarmManager.getScheduledAlarms()).isEmpty();
     }
 
     @Test
