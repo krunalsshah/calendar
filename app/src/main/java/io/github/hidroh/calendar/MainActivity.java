@@ -305,8 +305,9 @@ public class MainActivity extends AppCompatActivity {
 
     @VisibleForTesting
     protected boolean checkLocationPermissions() {
-        return ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        return (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) |
+                ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)) ==
+                PackageManager.PERMISSION_GRANTED;
     }
 
     @VisibleForTesting

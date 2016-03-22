@@ -150,17 +150,25 @@ public class WeatherSyncService extends IntentService {
         // schedule for update in next 24h
         ((AlarmManager) getSystemService(ALARM_SERVICE)).set(AlarmManager.RTC_WAKEUP,
                 Calendar.getInstance().getTimeInMillis() + AlarmManager.INTERVAL_DAY,
-                PendingIntent.getBroadcast(this, 0, new Intent(this, WeatherSyncAlarmReceiver.class), 0));
+                PendingIntent.getBroadcast(this, 0,
+                        new Intent(this, WeatherSyncAlarmReceiver.class), 0));
     }
 
     @VisibleForTesting
     @Nullable
     protected Location getLocation() {
         Location location = null;
+        // try network provider first
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) ==
                 PackageManager.PERMISSION_GRANTED) {
             location = ((LocationManager) getSystemService(LOCATION_SERVICE))
                     .getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+        }
+        // if not available try GPS provider
+        if (location == null && ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            location = ((LocationManager) getSystemService(LOCATION_SERVICE))
+                    .getLastKnownLocation(LocationManager.GPS_PROVIDER);
         }
         return location;
     }
