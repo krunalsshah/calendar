@@ -4,7 +4,6 @@ import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.res.TypedArray;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.provider.CalendarContract;
@@ -31,6 +30,7 @@ import java.util.TimeZone;
 
 import io.github.hidroh.calendar.CalendarUtils;
 import io.github.hidroh.calendar.R;
+import io.github.hidroh.calendar.ViewUtils;
 import io.github.hidroh.calendar.content.CalendarCursor;
 
 /**
@@ -76,16 +76,11 @@ public class EventEditView extends RelativeLayout {
         mTextViewEndTime = (TextView) findViewById(R.id.text_view_end_time);
         mTextViewCalendar = (TextView) findViewById(R.id.text_view_calendar);
         mTransparentColor = ContextCompat.getColor(context, android.R.color.transparent);
-        TypedArray colors = context.getResources().obtainTypedArray(R.array.calendar_colors);
-        if (colors.length() > 0) {
-            mColors = new int[colors.length()];
-            for (int i = 0; i < colors.length(); i++) {
-                mColors[i] = colors.getColor(i, mTransparentColor);
-            }
-        } else {
+        if (isInEditMode()) {
             mColors = new int[]{mTransparentColor};
+        } else {
+            mColors = ViewUtils.getCalendarColors(context);
         }
-        colors.recycle();
         setupViews();
         setEvent(mEvent);
     }

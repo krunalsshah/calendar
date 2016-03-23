@@ -16,6 +16,7 @@ import android.widget.ListView;
 import java.util.Set;
 
 import io.github.hidroh.calendar.R;
+import io.github.hidroh.calendar.ViewUtils;
 import io.github.hidroh.calendar.content.CalendarCursor;
 
 public class CalendarSelectionView extends ListView {
@@ -37,17 +38,11 @@ public class CalendarSelectionView extends ListView {
 
     public CalendarSelectionView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        int transparentColor = ContextCompat.getColor(context, android.R.color.transparent);
-        TypedArray colors = context.getResources().obtainTypedArray(R.array.calendar_colors);
-        if (colors.length() > 0) {
-            mColors = new int[colors.length()];
-            for (int i = 0; i < colors.length(); i++) {
-                mColors[i] = colors.getColor(i, transparentColor);
-            }
+        if (isInEditMode()) {
+            mColors = new int[]{ContextCompat.getColor(context, android.R.color.transparent)};
         } else {
-            mColors = new int[]{transparentColor};
+            mColors = ViewUtils.getCalendarColors(context);
         }
-        colors.recycle();
         mCursorAdapter = new CalendarCursorAdapter(context);
         TypedArray ta = context.getTheme().obtainStyledAttributes(new int[]{
                 R.attr.selectableItemBackground
