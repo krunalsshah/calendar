@@ -17,6 +17,7 @@ import android.view.View;
 
 import io.github.hidroh.calendar.CalendarUtils;
 import io.github.hidroh.calendar.R;
+import io.github.hidroh.calendar.ViewUtils;
 import io.github.hidroh.calendar.weather.Weather;
 
 public class AgendaView extends RecyclerView {
@@ -29,6 +30,7 @@ public class AgendaView extends RecyclerView {
     private int mPendingScrollPosition = NO_POSITION;
     private long mPrevTimeMillis = CalendarUtils.NO_TIME_MILLIS;
     private Bundle mAdapterSavedState;
+    private final int[] mColors;
 
     /**
      * Callback interface for active (top) date change event
@@ -53,7 +55,10 @@ public class AgendaView extends RecyclerView {
         super(context, attrs, defStyle);
         init();
         if (isInEditMode()) {
+            mColors = new int[]{ContextCompat.getColor(context, android.R.color.transparent)};
             setAdapter(new AgendaAdapter(context) {});
+        } else {
+            mColors = ViewUtils.getCalendarColors(context);
         }
     }
 
@@ -105,6 +110,7 @@ public class AgendaView extends RecyclerView {
                 mAdapter.append(getContext());
                 getLinearLayoutManager().scrollToPosition(mAdapter.getItemCount() / 2);
             }
+            mAdapter.setCalendarColors(mColors);
         }
         super.setAdapter(mAdapter);
     }

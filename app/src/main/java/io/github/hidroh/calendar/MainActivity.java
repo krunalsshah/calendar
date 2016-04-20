@@ -201,7 +201,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                         TextUtils.join(SEPARATOR, mExcludedCalendarIds))
                 .apply();
         PreferenceManager.getDefaultSharedPreferences(this)
-                .registerOnSharedPreferenceChangeListener(mWeatherChangeListener);
+                .unregisterOnSharedPreferenceChangeListener(mWeatherChangeListener);
     }
 
     @Override

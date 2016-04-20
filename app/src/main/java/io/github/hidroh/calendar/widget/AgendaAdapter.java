@@ -55,7 +55,7 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
     private final LayoutInflater mInflater;
     private final int mTransparentColor;
     private final int mIconTint;
-    private final int mColors[];
+    private int mColors[];
     private Weather mWeather;
     private boolean mLock;
 
@@ -67,16 +67,7 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
         });
         mIconTint = ta.getColor(0, 0);
         ta.recycle();
-        TypedArray colors = context.getResources().obtainTypedArray(R.array.calendar_colors);
-        if (colors.length() > 0) {
-            mColors = new int[colors.length()];
-            for (int i = 0; i < colors.length(); i++) {
-                mColors[i] = colors.getColor(i, mTransparentColor);
-            }
-        } else {
-            mColors = new int[]{mTransparentColor};
-        }
-        colors.recycle();
+        mColors = new int[]{mTransparentColor};
     }
 
     @Override
@@ -161,6 +152,10 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
             pair.first.setCursor(cursor, mEventObserver);
             notifyEventsChanged(pair.first, pair.second);
         }
+    }
+
+    void setCalendarColors(int[] calendarColors) {
+        mColors = calendarColors;
     }
 
     /**
