@@ -54,8 +54,8 @@ public class MonthViewTest {
         TestActivity activity = controller.create().start().resume().visible().get();
         monthView = (MonthView) activity.findViewById(R.id.calendar_view);
         //noinspection ConstantConditions
-        adapter = (MonthView.GridAdapter) monthView.getAdapter();
         monthView.setCalendar(createDayMillis(2016, Calendar.MARCH, 1));
+        adapter = (MonthView.GridAdapter) monthView.getAdapter();
         // 7 header cells + 2 carried days from Feb + 31 days in March
         assertThat(adapter.getItemCount()).isEqualTo(7 + 31 + 2);
     }
