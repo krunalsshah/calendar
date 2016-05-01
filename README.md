@@ -21,11 +21,11 @@ Simple event calendar, with agenda view.
 
 ## Screenshots
 
-<img src="screenshot/1.png" width="200px" />
-<img src="screenshot/2.png" width="200px" />
-<img src="screenshot/3.png" width="200px" />
-<img src="screenshot/4.png" width="600px" />
-<img src="screenshot/5.png" width="600px" />
+<img src="screenshots/1.png" width="200px" />
+<img src="screenshots/2.png" width="200px" />
+<img src="screenshots/3.png" width="200px" />
+<img src="screenshots/4.png" width="600px" />
+<img src="screenshots/5.png" width="600px" />
 
 ## Discussions
 Scope and conventions:
