@@ -19,6 +19,14 @@ Simple event calendar, with agenda view.
     ./gradlew :app:testDebug
     ./gradlew :app:jacocoTestCoverage
 
+## Screenshots
+
+<img src="screenshot/1.png" width="200px" />
+<img src="screenshot/2.png" width="200px" />
+<img src="screenshot/3.png" width="200px" />
+<img src="screenshot/4.png" width="600px" />
+<img src="screenshot/5.png" width="600px" />
+
 ## Discussions
 Scope and conventions:
 * Assume local time zone (device time zone) for UI display
