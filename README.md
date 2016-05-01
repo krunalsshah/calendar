@@ -13,7 +13,7 @@ Simple event calendar, with agenda view.
 
     ./gradlew :app:assembleDebug
 
-**Test & Coverage** [![Build Status](https://travis-ci.org/hidroh/calendar.svg?branch=master)](https://travis-ci.org/hidroh/calendar)
+**Test & Coverage** [![Build Status](https://travis-ci.org/hidroh/calendar.svg?branch=master)](https://travis-ci.org/hidroh/calendar) [![Coverage Status](https://coveralls.io/repos/hidroh/calendar/badge.svg?branch=master)](https://coveralls.io/r/hidroh/calendar?branch=master)
 
     ./gradlew :app:lintDebug
     ./gradlew :app:testDebug
