@@ -1,5 +1,6 @@
 apply plugin: 'com.android.application'
 apply plugin: 'jacoco'
+apply plugin: 'com.github.kt3k.coveralls'
 
 android {
     compileSdkVersion 23
@@ -58,7 +59,8 @@ dependencies {
 
 task jacocoTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest']) {
     reports {
-        xml.enabled false
+        xml.enabled true
+        xml.destination "${buildDir}/reports/jacoco/test/jacocoTestReport.xml"
         html.destination "${buildDir}/reports/coverage"
     }
 
@@ -68,6 +70,7 @@ task jacocoTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest']) {
             exclude: [ '**/R.class', '**/R$*.class' ])
 
     doLast {
+        println "coveralls report has been generated to file://${buildDir}/reports/jacoco/test/jacocoTestReport.xml"
         println "coverage report generated at file://${reports.html.destination}/index.html"
     }
 }
