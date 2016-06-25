@@ -1,5 +1,7 @@
 package io.github.hidroh.calendar;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricGradleTestRunner;
@@ -15,6 +17,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(RobolectricGradleTestRunner.class)
 public class CalendarUtilsTest {
+    private Locale defaultLocale;
+    private TimeZone defaultTimeZone;
+
+    @Before
+    public void setUp() {
+        defaultLocale = Locale.getDefault();
+        Locale.setDefault(Locale.US);
+        defaultTimeZone = TimeZone.getDefault();
+        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Singapore"));
+    }
+
     @Test
     public void testIsNotTime() {
         assertTrue(CalendarUtils.isNotTime(CalendarUtils.NO_TIME_MILLIS));
@@ -34,8 +47,6 @@ public class CalendarUtilsTest {
 
     @Test
     public void testToDayString() {
-        Locale defaultLocale = Locale.getDefault();
-        Locale.setDefault(Locale.US);
         Calendar calendar = Calendar.getInstance();
         calendar.set(2016, Calendar.MARCH, 20);
         String actual = CalendarUtils.toDayString(RuntimeEnvironment.application,
@@ -44,13 +55,10 @@ public class CalendarUtilsTest {
                 .contains("Sunday")
                 .contains("March")
                 .contains("20");
-        Locale.setDefault(defaultLocale);
     }
 
     @Test
     public void testToMonthString() {
-        Locale defaultLocale = Locale.getDefault();
-        Locale.setDefault(Locale.US);
         Calendar calendar = Calendar.getInstance();
         calendar.set(2016, Calendar.MARCH, 20);
         String actual = CalendarUtils.toMonthString(RuntimeEnvironment.application,
@@ -59,19 +67,15 @@ public class CalendarUtilsTest {
                 .doesNotContain("Sunday")
                 .contains("March")
                 .contains("20");
-        Locale.setDefault(defaultLocale);
     }
 
     @Test
     public void testToTimeString() {
-        Locale defaultLocale = Locale.getDefault();
-        Locale.setDefault(Locale.US);
         Calendar calendar = Calendar.getInstance();
         calendar.set(2016, Calendar.MARCH, 20, 8, 30);
         String actual = CalendarUtils.toTimeString(RuntimeEnvironment.application,
                 calendar.getTimeInMillis());
         assertThat(actual).contains("8:30 AM");
-        Locale.setDefault(defaultLocale);
     }
 
     @Test
@@ -194,8 +198,6 @@ public class CalendarUtilsTest {
     public void testMonthFirstDayOffset() {
         assertThat(CalendarUtils.monthFirstDayOffset(CalendarUtils.NO_TIME_MILLIS))
                 .isEqualTo(0);
-        Locale defaultLocale = Locale.getDefault();
-        Locale.setDefault(Locale.US);
         Calendar march = Calendar.getInstance();
         march.set(2016, Calendar.MARCH, 1);
         assertThat(CalendarUtils.monthFirstDayOffset(march.getTimeInMillis()))
@@ -205,17 +207,19 @@ public class CalendarUtilsTest {
         assertThat(CalendarUtils.monthFirstDayOffset(march.getTimeInMillis()))
                 .isEqualTo(3); // [Sat, Sun, Mon] Tue
         CalendarUtils.sWeekStart = original;
-        Locale.setDefault(defaultLocale);
     }
 
     @Test
     public void testConvertTimeZone() {
-        TimeZone defaultTimeZone = TimeZone.getDefault();
-        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Singapore")); // after UTC
         long local = System.currentTimeMillis();
         long utc = CalendarUtils.toUtcTimeZone(local);
         assertThat(local).isLessThan(utc);
         assertThat(local).isEqualTo(CalendarUtils.toLocalTimeZone(utc));
+    }
+
+    @After
+    public void tearDown() {
+        Locale.setDefault(defaultLocale);
         TimeZone.setDefault(defaultTimeZone);
     }
 }
