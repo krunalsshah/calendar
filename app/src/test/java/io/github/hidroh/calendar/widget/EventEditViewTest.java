@@ -16,7 +16,6 @@ import android.widget.TextView;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
@@ -50,7 +49,6 @@ public class EventEditViewTest {
     private TextView textViewEndDate;
     private TextView textViewEndTime;
     private TextView textViewCalendar;
-    private TimeZone defaultTimeZone;
 
     @Before
     public void setUp() {
@@ -65,8 +63,6 @@ public class EventEditViewTest {
         textViewEndDate = (TextView) view.findViewById(R.id.text_view_end_date);
         textViewEndTime = (TextView) view.findViewById(R.id.text_view_end_time);
         textViewCalendar = (TextView) view.findViewById(R.id.text_view_calendar);
-        defaultTimeZone = TimeZone.getDefault();
-        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Singapore"));
     }
 
     @Test
@@ -84,8 +80,8 @@ public class EventEditViewTest {
 
     @Test
     public void testExistingAllDayEvent() {
-        long start = createTimeMillis(2016, Calendar.MARCH, 18, 0, 0, "Asia/Singapore"),
-                end = createTimeMillis(2016, Calendar.MARCH, 19, 0, 0, "Asia/Singapore");
+        long start = createTimeMillis(2016, Calendar.MARCH, 18, 0, 0),
+                end = createTimeMillis(2016, Calendar.MARCH, 19, 0, 0);
         view.setEvent(new EventEditView.Event.Builder()
                 .id(1L)
                 .calendarId(1L)
@@ -107,8 +103,8 @@ public class EventEditViewTest {
 
     @Test
     public void testExistingNonAllDayEvent() {
-        long start = createTimeMillis(2016, Calendar.MARCH, 18, 10, 30, "Asia/Singapore"),
-                end = createTimeMillis(2016, Calendar.MARCH, 19, 12, 30, "Asia/Singapore");
+        long start = createTimeMillis(2016, Calendar.MARCH, 18, 10, 30),
+                end = createTimeMillis(2016, Calendar.MARCH, 19, 12, 30);
         view.setEvent(new EventEditView.Event.Builder()
                 .id(1L)
                 .calendarId(1L)
@@ -128,12 +124,10 @@ public class EventEditViewTest {
     }
 
     @Test
-    @Ignore
-    // TODO
     public void testEditStartDate() {
         // initial event timing
-        long start = createTimeMillis(2016, Calendar.MARCH, 18, 10, 30, "Asia/Singapore"),
-                end = createTimeMillis(2016, Calendar.MARCH, 19, 8, 30, "Asia/Singapore");
+        long start = createTimeMillis(2016, Calendar.MARCH, 18, 10, 30),
+                end = createTimeMillis(2016, Calendar.MARCH, 19, 8, 30);
         view.setEvent(new EventEditView.Event.Builder()
                 .id(1L)
                 .calendarId(1L)
@@ -152,7 +146,7 @@ public class EventEditViewTest {
         ShadowDatePickerDialog shadowDatePickerDialog = shadowOf((DatePickerDialog) alertDialog);
         shadowDatePickerDialog.getOnDateSetListenerCallback()
                 .onDateSet(null, 2016, Calendar.APRIL, 15);
-        long expected = createTimeMillis(2016, Calendar.APRIL, 15, 0, 0, "Asia/Singapore");
+        long expected = createTimeMillis(2016, Calendar.APRIL, 15, 0, 0);
         assertHasDateString(textViewStartDate, expected);
         assertHasTimeString(textViewStartTime, start);
 
@@ -165,7 +159,7 @@ public class EventEditViewTest {
         shadowOf((DatePickerDialog) ShadowDatePickerDialog.getLatestAlertDialog())
                 .getOnDateSetListenerCallback()
                 .onDateSet(null, 2016, Calendar.MARCH, 30);
-        long newExpected = createTimeMillis(2016, Calendar.MARCH, 30, 0, 0, "Asia/Singapore");
+        long newExpected = createTimeMillis(2016, Calendar.MARCH, 30, 0, 0);
         assertHasDateString(textViewStartDate, newExpected);
         assertHasTimeString(textViewStartTime, start);
         assertHasDateString(textViewEndDate, expected);
@@ -173,12 +167,10 @@ public class EventEditViewTest {
     }
 
     @Test
-    @Ignore
-    // TODO
     public void testEditEndDate() {
         // initial event timing
-        long start = createTimeMillis(2016, Calendar.MARCH, 18, 10, 30, "Asia/Singapore"),
-                end = createTimeMillis(2016, Calendar.MARCH, 19, 8, 30, "Asia/Singapore");
+        long start = createTimeMillis(2016, Calendar.MARCH, 18, 10, 30),
+                end = createTimeMillis(2016, Calendar.MARCH, 19, 8, 30);
         view.setEvent(new EventEditView.Event.Builder()
                 .id(1L)
                 .calendarId(1L)
@@ -193,7 +185,7 @@ public class EventEditViewTest {
         shadowOf((DatePickerDialog) ShadowDatePickerDialog.getLatestAlertDialog())
                 .getOnDateSetListenerCallback()
                 .onDateSet(null, 2016, Calendar.MARCH, 15);
-        long expected = createTimeMillis(2016, Calendar.MARCH, 15, 0, 0, "Asia/Singapore");
+        long expected = createTimeMillis(2016, Calendar.MARCH, 15, 0, 0);
         assertHasDateString(textViewEndDate, expected);
         assertHasTimeString(textViewEndTime, end);
 
@@ -206,7 +198,7 @@ public class EventEditViewTest {
         shadowOf((DatePickerDialog) ShadowDatePickerDialog.getLatestAlertDialog())
                 .getOnDateSetListenerCallback()
                 .onDateSet(null, 2016, Calendar.MARCH, 30);
-        long newExpected = createTimeMillis(2016, Calendar.MARCH, 30, 0, 0, "Asia/Singapore");
+        long newExpected = createTimeMillis(2016, Calendar.MARCH, 30, 0, 0);
         assertHasDateString(textViewEndDate, newExpected);
         assertHasTimeString(textViewEndTime, end);
         assertHasDateString(textViewStartDate, expected);
@@ -216,8 +208,8 @@ public class EventEditViewTest {
     @Test
     public void testEditStartTime() {
         // initial event timing
-        long start = createTimeMillis(2016, Calendar.MARCH, 18, 10, 30, "Asia/Singapore"),
-                end = createTimeMillis(2016, Calendar.MARCH, 18, 11, 30, "Asia/Singapore");
+        long start = createTimeMillis(2016, Calendar.MARCH, 18, 10, 30),
+                end = createTimeMillis(2016, Calendar.MARCH, 18, 11, 30);
         view.setEvent(new EventEditView.Event.Builder()
                 .id(1L)
                 .calendarId(1L)
@@ -236,7 +228,7 @@ public class EventEditViewTest {
         TimePickerDialog timePickerDialog = (TimePickerDialog) alertDialog;
         timePickerDialog.updateTime(12, 45);
         ((TimePickerDialog) alertDialog).onClick(alertDialog, DialogInterface.BUTTON_POSITIVE);
-        long expected = createTimeMillis(2016, Calendar.MARCH, 18, 12, 45, "Asia/Singapore");
+        long expected = createTimeMillis(2016, Calendar.MARCH, 18, 12, 45);
         assertHasDateString(textViewStartDate, start);
         assertHasTimeString(textViewStartTime, expected);
 
@@ -249,7 +241,7 @@ public class EventEditViewTest {
         timePickerDialog = (TimePickerDialog) ShadowAlertDialog.getLatestAlertDialog();
         timePickerDialog.updateTime(7, 45);
         timePickerDialog.onClick(timePickerDialog, DialogInterface.BUTTON_POSITIVE);
-        long newExpected = createTimeMillis(2016, Calendar.MARCH, 18, 7, 45, "Asia/Singapore");
+        long newExpected = createTimeMillis(2016, Calendar.MARCH, 18, 7, 45);
         assertHasDateString(textViewStartDate, start);
         assertHasTimeString(textViewStartTime, newExpected);
         assertHasDateString(textViewEndDate, end);
@@ -259,8 +251,8 @@ public class EventEditViewTest {
     @Test
     public void testEditEndTime() {
         // initial event timing
-        long start = createTimeMillis(2016, Calendar.MARCH, 18, 10, 30, "Asia/Singapore"),
-                end = createTimeMillis(2016, Calendar.MARCH, 18, 11, 30, "Asia/Singapore");
+        long start = createTimeMillis(2016, Calendar.MARCH, 18, 10, 30),
+                end = createTimeMillis(2016, Calendar.MARCH, 18, 11, 30);
         view.setEvent(new EventEditView.Event.Builder()
                 .id(1L)
                 .calendarId(1L)
@@ -275,7 +267,7 @@ public class EventEditViewTest {
         TimePickerDialog timePickerDialog = (TimePickerDialog) ShadowAlertDialog.getLatestAlertDialog();
         timePickerDialog.updateTime(7, 45);
         timePickerDialog.onClick(timePickerDialog, DialogInterface.BUTTON_POSITIVE);
-        long expected = createTimeMillis(2016, Calendar.MARCH, 18, 7, 45, "Asia/Singapore");
+        long expected = createTimeMillis(2016, Calendar.MARCH, 18, 7, 45);
         assertHasDateString(textViewEndDate, end);
         assertHasTimeString(textViewEndTime, expected);
 
@@ -288,7 +280,7 @@ public class EventEditViewTest {
         timePickerDialog = (TimePickerDialog) ShadowAlertDialog.getLatestAlertDialog();
         timePickerDialog.updateTime(10, 45);
         timePickerDialog.onClick(timePickerDialog, DialogInterface.BUTTON_POSITIVE);
-        long newExpected = createTimeMillis(2016, Calendar.MARCH, 18, 10, 45, "Asia/Singapore");
+        long newExpected = createTimeMillis(2016, Calendar.MARCH, 18, 10, 45);
         assertHasDateString(textViewEndDate, end);
         assertHasTimeString(textViewEndTime, newExpected);
         assertHasDateString(textViewStartDate, start);
@@ -298,8 +290,8 @@ public class EventEditViewTest {
     @Test
     public void testSwitchAllDay() {
         // initial event timing
-        long start = createTimeMillis(2016, Calendar.MARCH, 18, 10, 30, "Asia/Singapore"),
-                end = createTimeMillis(2016, Calendar.MARCH, 18, 11, 30, "Asia/Singapore");
+        long start = createTimeMillis(2016, Calendar.MARCH, 18, 10, 30),
+                end = createTimeMillis(2016, Calendar.MARCH, 18, 11, 30);
         view.setEvent(new EventEditView.Event.Builder()
                 .id(1L)
                 .calendarId(1L)
@@ -313,8 +305,8 @@ public class EventEditViewTest {
         // switching to all day should set start & end time to midnight, advance end date if equals
         switchAllDay.toggle();
         assertTrue(switchAllDay.isChecked());
-        long expectedStart = createTimeMillis(2016, Calendar.MARCH, 18, 0, 0, "Asia/Singapore"),
-                expectedEnd = createTimeMillis(2016, Calendar.MARCH, 19, 0, 0, "Asia/Singapore");
+        long expectedStart = createTimeMillis(2016, Calendar.MARCH, 18, 0, 0),
+                expectedEnd = createTimeMillis(2016, Calendar.MARCH, 19, 0, 0);
         assertHasDateString(textViewStartDate, expectedStart);
         assertHasTimeString(textViewStartTime, expectedStart);
         assertHasDateString(textViewEndDate, expectedEnd);
@@ -329,7 +321,7 @@ public class EventEditViewTest {
                 .onDateSet(null, 2016, Calendar.MARCH, 20);
         assertFalse(switchAllDay.isChecked());
         assertFalse(view.getEvent().isAllDay());
-        assertThat(view.getEvent().getTimeZone()).isEqualTo("Asia/Singapore");
+        assertThat(view.getEvent().getTimeZone()).isNotEqualTo("UTC");
     }
 
     @Test
@@ -360,7 +352,6 @@ public class EventEditViewTest {
 
     @After
     public void tearDown() {
-        TimeZone.setDefault(defaultTimeZone);
         controller.pause().stop().destroy();
     }
 
@@ -372,8 +363,8 @@ public class EventEditViewTest {
         assertThat(textView).hasTextString(CalendarUtils.toTimeString(activity, timeMillis));
     }
 
-    private long createTimeMillis(int year, int month, int dayOfMonth, int hour, int minute, String timeZone) {
-        Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(timeZone));
+    private long createTimeMillis(int year, int month, int dayOfMonth, int hour, int minute) {
+        Calendar calendar = Calendar.getInstance(TimeZone.getDefault());
         calendar.set(year, month, dayOfMonth, hour, minute, 0);
         calendar.set(Calendar.MILLISECOND, 0);
         return calendar.getTimeInMillis();
