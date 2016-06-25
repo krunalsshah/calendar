@@ -3,16 +3,15 @@ apply plugin: 'jacoco'
 apply plugin: 'com.github.kt3k.coveralls'
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion "23.0.3"
+    compileSdkVersion 24
+    buildToolsVersion "24.0.0"
 
     defaultConfig {
         applicationId "io.github.hidroh.calendar"
         minSdkVersion 14
-        targetSdkVersion 23
+        targetSdkVersion 24
         versionCode 1
         versionName "1.0"
-        vectorDrawables.useSupportLibrary = true
         buildConfigField "String", "FORECAST_IO_API_KEY", "\"97b232a76771e4bd5fcd985da278ac0d\""
     }
 
@@ -32,11 +31,17 @@ android {
             events 'passed', 'skipped', 'failed', 'standardOut', 'standardError'
             exceptionFormat 'full'
         }
+        maxHeapSize = '2048m'
+        maxParallelForks = 1
+        forkEvery = 1
+        jacoco {
+            includeNoLocationClasses = true
+        }
     }
 }
 
 ext {
-    supportVersion = '23.2.1'
+    supportVersion = '24.0.0'
     retrofit2Version = '2.0.0'
     robolectricVersion = '3.0'
     assertjVersion = '1.1.1'
