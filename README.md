@@ -2,10 +2,10 @@
 Simple event calendar, with agenda view.
 
 ## Requirements
-* Android SDK 23
-* Android SDK Tools 25.0.8
-* Android SDK Build-tools 23.0.3
-* Android Support Library 23.2.1
+* Android SDK 24
+* Android SDK Tools 25.1.7
+* Android SDK Build-tools 24.0.0
+* Android Support Library 23.4.0
 
 ## Build & Test
 
