@@ -11,6 +11,7 @@
         android:id="@+id/text_view_title"
         tools:text="Mon, March 7th, 2016"
         style="@style/TextAppearance.AppCompat.Caption"
+        android:textAllCaps="true"
         android:paddingTop="@dimen/padding"
         android:paddingBottom="@dimen/padding"
         android:layout_width="match_parent"

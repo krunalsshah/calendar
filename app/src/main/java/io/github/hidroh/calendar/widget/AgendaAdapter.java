@@ -14,7 +14,6 @@ import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.util.Pair;
-import android.support.v7.text.AllCapsTransformationMethod;
 import android.support.v7.widget.RecyclerView;
 import android.text.format.DateUtils;
 import android.view.LayoutInflater;
@@ -472,8 +471,6 @@ public abstract class AgendaAdapter extends RecyclerView.Adapter<AgendaAdapter.R
         public GroupViewHolder(View itemView) {
             super(itemView);
             textView = (TextView) itemView.findViewById(R.id.text_view_title);
-            textView.setTransformationMethod(
-                    new AllCapsTransformationMethod(textView.getContext()));
             weather = itemView.findViewById(R.id.weather);
             textViewMorning = (TextView) itemView.findViewById(R.id.text_view_morning);
             textViewAfternoon = (TextView) itemView.findViewById(R.id.text_view_afternoon);
