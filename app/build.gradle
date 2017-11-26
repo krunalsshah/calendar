@@ -3,13 +3,13 @@ apply plugin: 'jacoco'
 apply plugin: 'com.github.kt3k.coveralls'
 
 android {
-    compileSdkVersion 24
-    buildToolsVersion "24.0.0"
+    compileSdkVersion 26
+    buildToolsVersion "26.0.2"
 
     defaultConfig {
         applicationId "io.github.hidroh.calendar"
         minSdkVersion 14
-        targetSdkVersion 24
+        targetSdkVersion 26
         versionCode 1
         versionName "1.0"
         buildConfigField "String", "FORECAST_IO_API_KEY", "\"97b232a76771e4bd5fcd985da278ac0d\""
@@ -38,26 +38,27 @@ android {
             includeNoLocationClasses = true
         }
     }
+    testOptions.unitTests.includeAndroidResources true
 }
 
 ext {
-    supportVersion = '23.4.0'
+    supportVersion = '26.1.0'
     retrofit2Version = '2.0.0'
     robolectricVersion = '3.0'
     assertjVersion = '1.1.1'
 }
 
 dependencies {
-    compile "com.android.support:appcompat-v7:$supportVersion",
+    implementation "com.android.support:appcompat-v7:$supportVersion",
             "com.android.support:recyclerview-v7:$supportVersion",
             "com.android.support:design:$supportVersion",
             "com.squareup.retrofit2:retrofit:$retrofit2Version",
             "com.squareup.retrofit2:converter-gson:$retrofit2Version"
-    testCompile "org.robolectric:robolectric:$robolectricVersion",
+    testImplementation "org.robolectric:robolectric:$robolectricVersion",
             "org.robolectric:shadows-support-v4:$robolectricVersion",
             'org.mockito:mockito-core:1.9.5+',
             'junit:junit:4.12'
-    testCompile("com.squareup.assertj:assertj-android:$assertjVersion") {
+    testImplementation("com.squareup.assertj:assertj-android:$assertjVersion") {
         exclude group: 'com.android.support', module: 'support-annotations'
     }
 }
@@ -65,8 +66,8 @@ dependencies {
 task jacocoTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest']) {
     reports {
         xml.enabled true
-        xml.destination "${buildDir}/reports/jacoco/test/jacocoTestReport.xml"
-        html.destination "${buildDir}/reports/coverage"
+        xml.destination file("${buildDir}/reports/jacoco/test/jacocoTestReport.xml")
+        html.destination file("${buildDir}/reports/coverage")
     }
 
     executionData = files "${buildDir}/jacoco/testDebugUnitTest.exec"

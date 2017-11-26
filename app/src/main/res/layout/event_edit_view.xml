@@ -46,7 +46,7 @@
     </android.support.design.widget.TextInputLayout>
 
     <ImageView
-        app:srcCompat="@drawable/ic_title_white_24dp"
+        android:src="@drawable/ic_title_white_24dp"
         tools:src="@drawable/ic_title_white_24dp"
         android:tint="?android:attr/textColorHint"
         android:scaleType="center"
@@ -105,7 +105,7 @@
 
     <!-- Row 2 -->
     <ImageView
-        app:srcCompat="@drawable/ic_access_time_white_24dp"
+        android:src="@drawable/ic_access_time_white_24dp"
         tools:src="@drawable/ic_access_time_white_24dp"
         android:tint="?android:attr/textColorHint"
         android:scaleType="center"
@@ -201,7 +201,7 @@
 
     <!-- Row 5 -->
     <ImageView
-        app:srcCompat="@drawable/ic_event_white_24dp"
+        android:src="@drawable/ic_event_white_24dp"
         tools:src="@drawable/ic_event_white_24dp"
         android:tint="?android:attr/textColorHint"
         android:scaleType="center"

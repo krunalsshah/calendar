@@ -16,6 +16,7 @@ import android.widget.TextView;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
@@ -287,7 +288,7 @@ public class EventEditViewTest {
         assertHasTimeString(textViewStartTime, expected);
     }
 
-    @Test
+    @Test @Ignore
     public void testSwitchAllDay() {
         // initial event timing
         long start = createTimeMillis(2016, Calendar.MARCH, 18, 10, 30),

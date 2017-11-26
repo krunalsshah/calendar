@@ -9,7 +9,6 @@ import android.content.pm.ResolveInfo;
 import android.database.ContentObserver;
 import android.os.Bundle;
 import android.provider.CalendarContract;
-import android.support.v4.content.ShadowContentResolverCompatJellybean;
 import android.widget.TextView;
 
 import org.junit.After;
@@ -36,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.robolectric.Shadows.shadowOf;
 
 @SuppressWarnings("ConstantConditions")
-@Config(shadows = {ShadowContentResolverCompatJellybean.class, ShadowAsyncQueryHandler.class})
+@Config(shadows = {ShadowAsyncQueryHandler.class})
 @RunWith(RobolectricGradleTestRunner.class)
 public class EditActivityTest {
     private ActivityController<TestEditActivity> controller;
