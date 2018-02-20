@@ -37,4 +37,5 @@
     <string name="close_drawer">Close drawer</string>
     <string name="calendars">Calendars</string>
     <string name="error_location">Unable to determine your location</string>
+    <string name="btn_title_event_item">Button</string>
 </resources>
