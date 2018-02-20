@@ -45,7 +45,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginRight="@dimen/margin"
-            android:background="@color/greenA700"
+            android:background="@drawable/rounded_rectangle"
             android:paddingEnd="@dimen/horizontal_padding"
             android:paddingLeft="@dimen/horizontal_padding"
             android:paddingRight="@dimen/horizontal_padding"

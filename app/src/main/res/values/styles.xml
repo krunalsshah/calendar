@@ -55,4 +55,8 @@
         <item name="android:layout_width">match_parent</item>
     </style>
 
+    <style name="AppTheme.RoundedCornerMaterialButton" parent="Widget.AppCompat.Button.Colored">
+        <item name="android:background">@drawable/rounded_rectangle</item>
+    </style>
+
 </resources>
